@@ -1,3 +1,4 @@
+```shell
 project_root/
 ├── data/                        ← Python 패키지 (★ 반드시 __init__.py)
 │   ├── __init__.py
@@ -8,7 +9,7 @@ project_root/
 ├── requirements.txt             ← 의존성 패키지 목록 (협업 시 설치 안내용)
 ├── setup.py                     ← 협업을 위한 개발 설치 환경 구성용 (예: `pip install -e .`)
 └── README.md
-
+```
 
 팀원이 바로 설치하고 import 가능하게
 ```python
