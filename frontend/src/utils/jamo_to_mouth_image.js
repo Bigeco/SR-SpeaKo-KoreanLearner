@@ -1,4 +1,4 @@
-image_mapping = {
+const imageMapping = {
     'ㄱ': 'giyok.png',
     'ㄴ': 'nieun.png',
     'ㄷ': 'digeut.png',
@@ -20,14 +20,16 @@ image_mapping = {
     'ㅣ': 'i.png',
     'ㅔ': 'e.png',
     'ㅐ': 'ae.png'
-}
-
-def get_image_for_jamo(jamo):
-    return image_mapping.get(jamo, None)
-
-jamo = 'ㄴ'
-image_file = get_image_for_jamo(jamo)
-if image_file:
-    print(f"{jamo}에 해당하는 이미지 파일: {image_file}")
-else:
-    print("해당 자모음에 대한 이미지 파일을 찾을 수 없습니다.")
+  };
+  
+  function getImageForJamo(jamo) {
+    return imageMapping[jamo] || null;
+  }
+  
+  function getImagePath(jamo) {
+    const imageName = getImageForJamo(jamo);
+    return imageName ? `/images/${imageName}` : null;
+  }
+  
+  export { getImageForJamo, getImagePath, imageMapping };
+  
