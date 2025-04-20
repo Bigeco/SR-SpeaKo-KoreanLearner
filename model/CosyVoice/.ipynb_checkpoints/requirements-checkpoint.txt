@@ -1,0 +1,6 @@
+HyperPyYAML==1.2.2
+modelscope==1.20.0
+tensorrt_cu12==10.0.1
+torch==2.3.1+cu121
+torchaudio==2.3.1+cu121
+tqdm==4.67.1
