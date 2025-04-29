@@ -1,17 +1,75 @@
-import React from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { NavBar } from '../../components/layout/NavBar';
+import { ScoreDisplay } from './components/ScoreDisplay';
+import { PronunciationBlock } from './components/PronunciationBlock';
+import { Controls } from './components/Controls';
 import './styles/subtitle.css';
-import { SubtitleText } from './components/SubtitleText';
-import { SubtitleControls } from './components/SubtitleControls';
 
-const SubtitleView: React.FC = () => {
+const SubtitleView = () => {
+  const navigate = useNavigate();
+  const [recording, setRecording] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [score] = useState(83.33);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // 이벤트 핸들러
+  const toggleAudio = () => {
+    setIsPlaying(!isPlaying);
+    if (!isPlaying) {
+      setTimeout(() => setIsPlaying(false), 3000);
+    }
+  };
+
+  const handleGoBack = () => navigate(-1);
+  const toggleRecording = () => setRecording(!recording);
+  const toggleHelp = () => setShowHelp(!showHelp);
+
   return (
-    <div className="subtitle-container">
-      <div className="subtitle-content">
-        <SubtitleText />  {/* 자막 표시 컴포넌트 */}
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="flex justify-between items-center p-6 border-b border-gray-100">
+        <button 
+          onClick={handleGoBack}
+          className="p-1 rounded-full hover:bg-gray-100"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div className="text-center font-medium">스픽코님, 반갑습니다.</div>
+        <div className="w-5"></div>
       </div>
-      <div className="subtitle-controls">
-        <SubtitleControls />  {/* 컨트롤 버튼 컴포넌트 */}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center px-8 py-4 overflow-auto">
+        <ScoreDisplay score={score} />
+
+        {/* Practice Phrases */}
+        <div className="w-full space-y-4 mb-8">
+          <PronunciationBlock
+            type="model"
+            text="안녕하세요 오늘 날씨가 참 좋아요"
+            isPlaying={isPlaying}
+            onToggleAudio={toggleAudio}
+          />
+
+          <PronunciationBlock
+            type="user"
+            text="안녕하세요 오늘 날씨가 잠 좋아요"
+            score={score}
+            isRecording={recording}
+          />
+        </div>
       </div>
+
+      <Controls
+        isRecording={recording}
+        showHelp={showHelp}
+        onToggleRecording={toggleRecording}
+        onToggleHelp={toggleHelp}
+      />
+
+      <NavBar />
     </div>
   );
 };
