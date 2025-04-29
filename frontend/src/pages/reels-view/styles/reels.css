@@ -1,0 +1,20 @@
+.reels-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+}
+
+.reels-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.reels-controls {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+} 
