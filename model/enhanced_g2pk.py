@@ -1,6 +1,6 @@
 import re
 
-from g2pk.g2pk import G2p as OriginalG2p
+from g2pk2 import G2p as OriginalG2p
 
 
 class EnhancedG2p(OriginalG2p):
@@ -12,16 +12,6 @@ class EnhancedG2p(OriginalG2p):
         self.word_patterns = {
             "밝기": "발끼",
         }
-
-    def block_unnecessary_linking(self, text):
-        """을/를 조사 뒤에 공백 + ㅇ으로 시작하는 단어가 오는 경우 연음을 방지"""
-        # 을/를 + 공백 + ㅇ으로 시작하는 단어 패턴 찾기
-        # 특수 문자 삽입을 통해 연음 방지 (변환 후 제거)
-        # 예: "책을 읽다" -> "책을␣읽다" (␣는 특수 공백 문자)
-        pattern = r'([가-힣]+[을를])\s+([아-잏])'
-        text = re.sub(pattern, r'\1␣\2', text)
-        
-        return text
         
     def restore_spacing(self, text):
         """특수 문자로 처리된 공백을 복원"""
@@ -112,19 +102,16 @@ class EnhancedG2p(OriginalG2p):
     def __call__(self, string, descriptive=False, verbose=False, group_vowels=False, to_syl=True):
         """기존 G2p를 호출하되, 특정 패턴을 처리"""
         
-        # 1. 연음 방지 패턴 처리 (g2pk 변환 전)
-        string = self.block_unnecessary_linking(string)
-        
-        # 2. g2pk 원본 처리
+        # 1. g2pk 원본 처리
         result = super().__call__(string, descriptive, verbose, group_vowels, to_syl)
         
-        # 3. 특수 공백 복원
+        # 2. 특수 공백 복원
         result = self.restore_spacing(result)
         
-        # 4. 발음 패턴 처리 (g2pk 변환 후)
+        # 3. 발음 패턴 처리 (g2pk 변환 후)
         result = self.process_patterns(result)
 
-        # 5. 용언 + 게 패턴 처리
+        # 4. 용언 + 게 패턴 처리
         result = self.process_verb_endings(result)
 
         return result
@@ -170,7 +157,9 @@ if __name__ == "__main__":
         "가지를 읽을게요",
         "책 앞에 있어요",
         "그 곳으로 갈게요",
-        "길게 자르세요"
+        "길게 자르세요",
+        "포상은 열심히 한 아이에게만 주어지기 때문에 포상인 것입니다.",
+        "비록 요즘은 전염병 때문에 출입국이 쉽지 않지만"
 
     ]
     
@@ -188,4 +177,3 @@ if __name__ == "__main__":
         print(f"Enhanced G2p: {enhanced_result}")
         print("-" * 50)
 '''
-
