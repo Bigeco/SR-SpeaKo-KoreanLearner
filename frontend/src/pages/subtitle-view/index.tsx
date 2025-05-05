@@ -10,7 +10,7 @@ import './styles/subtitle.css';
 
 const SubtitleView = () => {
   const navigate = useNavigate();
-  const [recording, setRecording] = useState(false);
+  const [recording] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [score] = useState(83.33);
   const [isPlaying, setIsPlaying] = useState(false);
