@@ -1,119 +1,90 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface AudioRecorderProps {
   onRecordingComplete?: (audioUrl: string) => void;
-  className?: string;
   autoDownload?: boolean;
   fileName?: string;
+  children?: (props: {
+    isRecording: boolean;
+    startRecording: () => Promise<void>;
+    stopRecording: () => void;
+  }) => React.ReactNode;
 }
 
-export const AudioRecorder: React.FC<AudioRecorderProps> = ({ 
+export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingComplete,
-  className = '',
   autoDownload = true,
-  fileName = 'recording.wav'
+  fileName = 'recording.wav',
+  children
 }) => {
-  const startButtonRef = useRef<HTMLButtonElement | null>(null);
-  const stopButtonRef = useRef<HTMLButtonElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      audioChunksRef.current = [];
+      setIsRecording(true);
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        if (onRecordingComplete) {
+          onRecordingComplete(audioUrl);
+        }
+
+        if (autoDownload) {
+          const downloadLink = document.createElement('a');
+          downloadLink.href = audioUrl;
+          downloadLink.download = fileName;
+          downloadLink.style.display = 'none';
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+        }
+
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+
+        setIsRecording(false);
+      };
+
+      recorder.start();
+      console.log('녹음 시작');
+
+      audioContextRef.current = new AudioContext();
+    } catch (error) {
+      console.error('오류 발생:', error);
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      console.log('녹음 정지');
+    }
+  };
 
   useEffect(() => {
-    let audioChunks: Blob[] = [];
-    let stream: MediaStream | null = null;
-    let audioContext: AudioContext | null = null;
-
-    const startRecording = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        setMediaRecorder(recorder);
-        audioChunks = [];
-        setIsRecording(true);
-
-        recorder.ondataavailable = (event: BlobEvent) => {
-          audioChunks.push(event.data);
-        };
-
-        recorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-          const audioUrl = URL.createObjectURL(audioBlob);
-
-          if (audioRef.current) {
-            audioRef.current.src = audioUrl;
-          }
-
-          if (onRecordingComplete) {
-            onRecordingComplete(audioUrl);
-          }
-
-          if (autoDownload) {
-            const downloadLink = document.createElement('a');
-            downloadLink.href = audioUrl;
-            downloadLink.download = fileName;
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-          }
-
-          if (stream) {
-            stream.getTracks().forEach((track) => track.stop());
-          }
-
-          setIsRecording(false);
-        };
-
-        recorder.start();
-        console.log('녹음 시작');
-
-        audioContext = new AudioContext();
-      } catch (error) {
-        console.error('오류 발생:', error);
-        setIsRecording(false);
-      }
-    };
-
-    const stopRecording = () => {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        console.log('녹음 정지');
-      }
-    };
-
-    if (startButtonRef.current) {
-      startButtonRef.current.onclick = startRecording;
-    }
-    if (stopButtonRef.current) {
-      stopButtonRef.current.onclick = stopRecording;
-    }
-
     return () => {
-      if (audioContext) {
-        audioContext.close();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
       }
     };
-  }, [mediaRecorder, onRecordingComplete, autoDownload, fileName]);
+  }, []);
 
-  return (
-    <div className={`audio-recorder ${className}`}>
-      <button
-        id="start"
-        ref={startButtonRef}
-        disabled={isRecording}
-      >
-        시작
-      </button>
-      <button
-        id="stop"
-        ref={stopButtonRef}
-        disabled={!isRecording}
-      >
-        정지
-      </button>
-      <audio id="audio" ref={audioRef} controls />
-      {isRecording && <p>녹음 중</p>}
-    </div>
-  );
-}; 
+  return <>{children?.({ isRecording, startRecording, stopRecording })}</>;
+};
