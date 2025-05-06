@@ -5,11 +5,12 @@ import { NavBar } from '../../components/layout/NavBar';
 import { ScoreDisplay } from './components/ScoreDisplay';
 import { PronunciationBlock } from './components/PronunciationBlock';
 import { Controls } from './components/Controls';
+import { AudioRecorder } from '../../components/common/AudioRecorder';
 import './styles/subtitle.css';
 
 const SubtitleView = () => {
   const navigate = useNavigate();
-  const [recording, setRecording] = useState(false);
+  const [recording] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [score] = useState(83.33);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,8 +24,12 @@ const SubtitleView = () => {
   };
 
   const handleGoBack = () => navigate(-1);
-  const toggleRecording = () => setRecording(!recording);
   const toggleHelp = () => setShowHelp(!showHelp);
+
+  const handleRecordingComplete = (audioUrl: string) => {
+    console.log('녹음이 완료되었습니다:', audioUrl);
+    // TODO: 여기에 녹음된 오디오 처리 로직 추가
+  };
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -62,12 +67,20 @@ const SubtitleView = () => {
         </div>
       </div>
 
-      <Controls
-        isRecording={recording}
-        showHelp={showHelp}
-        onToggleRecording={toggleRecording}
-        onToggleHelp={toggleHelp}
-      />
+      <AudioRecorder
+        onRecordingComplete={handleRecordingComplete}
+        autoDownload={true}
+        fileName="subtitle-recording.wav"
+      >
+        {({ isRecording, startRecording, stopRecording }) => (
+          <Controls
+            isRecording={isRecording}
+            showHelp={showHelp}
+            onToggleRecording={isRecording ? stopRecording : startRecording}
+            onToggleHelp={toggleHelp}
+          />
+        )}
+      </AudioRecorder>
 
       <NavBar />
     </div>
