@@ -37,14 +37,15 @@ class EnhancedG2p(OriginalG2p):
         # 보호할 세그먼트 저장을 위한 딕셔너리
         protected_segments = {}
         marker_counter = 0
-        
-        # '에게' 조사 보호 (완전 대체)
-        while '에게' in result:
-            marker = f"__PROTECTED_{marker_counter}__"
-            protected_segments[marker] = '에게'
-            result = result.replace('에게', marker, 1)  # 한 번에 하나씩 대체
-            marker_counter += 1
-        
+
+        # '에게', '내게' 조사 보호 (완전 대체)
+        for protect_pattern in ['에게', '내게']:
+            while protect_pattern in result:
+                marker = f"__PROTECTED_{marker_counter}__"
+                protected_segments[marker] = protect_pattern
+                result = result.replace(protect_pattern, marker, 1)  # 한 번에 하나씩 대체
+                marker_counter += 1
+
         # 일반적인 형용사 + '게' 패턴 보호
         adj_stems = ['가냘프', '가늘', '가파르', '거세', '거칠', '건조하', '검', '게으르', '고르', '고달프',
                       '고맙', '곱', '고프', '곧', '굳', '굵', '귀엽', '기쁘', '길', '깊', '깨끗하', 
@@ -95,23 +96,67 @@ class EnhancedG2p(OriginalG2p):
             result = result.replace(marker, original)
         
         return result
-
-
-
+    
+    def fix_rhotacization(self, original_text, g2p_text):
+        """
+        종성 ㄹ + 띄어쓰기 + 초성 ㄴ 패턴에서 유음화가 발생한 경우를 원래대로 복원
+        """
+        # G2p 텍스트에서 유음화된 패턴 직접 찾기 (종성 ㄹ + 공백 + 초성 ㄹ)
+        rhot_pattern = re.compile(r'([가-힣]*[갈-힐])\s+([라-맇][가-힣]*)')
+        result = g2p_text
+        
+        # 모든 유음화된 패턴 찾기
+        rhot_matches = list(rhot_pattern.finditer(result))
+        
+        for i, rhot_match in enumerate(rhot_matches):
+            # 유음화된 패턴
+            rhot_full = rhot_match.group(0)
+            l_word = rhot_match.group(1)
+            r_word = rhot_match.group(2)
+        
+            # 초성 ㄹ 음절을 초성 ㄴ 음절로 변환
+            r_syllable = r_word[0]  # 첫 음절 (ㄹ 초성)
+            
+            char_code = ord(r_syllable) - ord('가')
+            initial = char_code // 588
+            medial = (char_code % 588) // 28
+            final = char_code % 28
+            
+            # 초성이 'ㄹ'인지 확인 (초성 코드 5가 'ㄹ'에 해당)
+            if initial == 5:
+                # 'ㄴ'으로 바꾼 문자 계산 (초성 코드 2가 'ㄴ'에 해당)
+                new_char_code = (2 * 588) + (medial * 28) + final
+                new_char = chr(new_char_code + ord('가'))
+                
+                # 변환된 첫 글자를 가진 단어 생성
+                n_word = new_char + r_word[1:]
+                
+                # 유음화 패턴 교정
+                start = rhot_match.start(2)  # 두 번째 그룹의 시작 위치
+                end = rhot_match.end(2)      # 두 번째 그룹의 끝 위치
+                result = result[:start] + n_word + result[end:]
+        
+        return result
         
     def __call__(self, string, descriptive=False, verbose=False, group_vowels=False, to_syl=True):
         """기존 G2p를 호출하되, 특정 패턴을 처리"""
         
-        # 1. g2pk 원본 처리
-        result = super().__call__(string, descriptive, verbose, group_vowels, to_syl)
+        # 1. 발음 패턴 처리 (g2pk 처리 전)
+        result = self.process_patterns(string)
         
-        # 2. 특수 공백 복원
+        # 2. 원본 문자열 저장 (나중에 유음화 처리에 사용)
+        original_string = result
+        
+        # 3. g2pk 원본 처리
+        result = super().__call__(result, descriptive, verbose, group_vowels, to_syl)
+        
+        # 4. 특수 공백 복원
         result = self.restore_spacing(result)
         
-        # 3. 발음 패턴 처리 (g2pk 변환 후)
-        result = self.process_patterns(result)
-
-        # 4. 용언 + 게 패턴 처리
+        # 5. 유음화 패턴 교정 (원본과 g2p 처리된 결과 비교)
+        result = self.fix_rhotacization(original_string, result)
+        
+        # 6. 용언 + 게 패턴 처리
         result = self.process_verb_endings(result)
 
         return result
@@ -159,7 +204,14 @@ if __name__ == "__main__":
         "그 곳으로 갈게요",
         "길게 자르세요",
         "포상은 열심히 한 아이에게만 주어지기 때문에 포상인 것입니다.",
-        "비록 요즘은 전염병 때문에 출입국이 쉽지 않지만"
+        "비록 요즘은 전염병 때문에 출입국이 쉽지 않지만",
+        "인간 들을 내게 바쳐라.",
+        "열심히 할 나이에",
+        "물 넣기",     
+        "달 너머",     
+        "술 남기지 마세요",  
+        "글 내용이 좋아요",
+        "감탄을 내게, 지원을 나비에게"
 
     ]
     
