@@ -1,20 +1,244 @@
+/* 저장 위치: frontend/src/pages/start-record-view/styles/start-record.css */
+/* 녹음 화면 스타일 */
 .start-record-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 20px;
+  background-color: white;
+  position: relative; /* 고정 요소를 위한 상대 위치 설정 */
 }
 
-.start-record-content {
+/* 전체 페이지 스타일 */
+html, body, #root {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* 스크롤 가능한 콘텐츠 영역 */
+.scrollable-content {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  overflow-y: auto;
+  padding-bottom: 160px; /* 네비게이션 바, 정확도 표시, 버튼 높이 고려 */
 }
 
-.start-record-controls {
-  padding: 20px;
+/* 오디오 파형 애니메이션 */
+@keyframes wave {
+  0% {
+    height: 10px;
+  }
+  50% {
+    height: 20px;
+  }
+  100% {
+    height: 10px;
+  }
+}
+
+.waveform-bar {
+  animation: wave 1.5s ease-in-out infinite;
+  animation-delay: calc(var(--delay) * 0.2s);
+}
+
+/* 마이크 버튼 펄스 애니메이션 */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.mic-button-active {
+  animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+/* 실시간 교정 애니메이션 */
+@keyframes pulse-text {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse {
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+/* 텍스트 타이핑 효과 */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+.typing-animation {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #4B5563;
+  animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #4B5563 }
+}
+
+/* 카드 트랜지션 효과 */
+.card-transition {
+  transition: all 0.3s ease;
+}
+
+/* 텍스트 효과 */
+.text-highlight.correction {
+  transition: color 0.3s ease;
+}
+
+/* 녹음 버튼 호버 효과 */
+.record-button {
+  transition: all 0.2s ease;
+}
+
+.record-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.record-button:active {
+  transform: scale(0.95);
+}
+
+/* 수정된 텍스트에 대한 스타일링 */
+.correction-arrow {
+  display: inline-block;
+  animation: point-right 1s ease-in-out infinite;
+}
+
+@keyframes point-right {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+/* 결과 컨테이너 페이드인 효과 */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* 하단 고정 요소 스타일 */
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* 녹음 버튼 컨테이너 */
+.mic-button-container {
+  position: fixed;
+  bottom: 84px; /* 네비게이션 바 높이 + 간격 */
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  gap: 10px;
-} 
+  z-index: 11;
+}
+
+/* 작업 버튼 컨테이너 */
+.action-buttons-container {
+  position: fixed;
+  bottom: 20px; /* 네비게이션 바 위에 위치 */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* 정확도 표시 컨테이너 */
+.accuracy-container {
+  position: fixed;
+  bottom: 64px; /* 네비게이션 바 위에 위치 */
+  left: 0;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(229, 231, 235, 1);
+  padding: 8px 16px;
+  z-index: 9;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.accuracy-container.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* 정확도 바 애니메이션 */
+.accuracy-bar {
+  height: 8px;
+  background-color: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.accuracy-bar-fill {
+  height: 100%;
+  transition: width 1s ease-out;
+  border-radius: 4px;
+}
+
+/* 정확도 점수 애니메이션 */
+@keyframes count-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.accuracy-score {
+  animation: count-up 0.5s ease-out;
+}
+
+/* 정확도 색상 변수 */
+.accuracy-high {
+  color: #10B981;
+  background-color: #10B981;
+}
+
+.accuracy-good {
+  color: #3B82F6;
+  background-color: #3B82F6;
+}
+
+.accuracy-medium {
+  color: #F59E0B;
+  background-color: #F59E0B;
+}
+
+.accuracy-low {
+  color: #EF4444;
+  background-color: #EF4444;
+}
