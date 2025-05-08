@@ -1,7 +1,7 @@
 import React from 'react';
-import './styles/start-record.css';
-import { StartRecordText } from './components/StartRecordText.tsx';
 import { StartRecordControls } from './components/StartRecordControls.tsx';
+import { StartRecordText } from './components/StartRecordText.tsx';
+import './styles/start-record.css';
 
 const StartRecordView: React.FC = () => {
   return (
