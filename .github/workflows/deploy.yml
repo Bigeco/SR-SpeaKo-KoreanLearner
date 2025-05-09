@@ -58,4 +58,15 @@ jobs:
           echo "::error::Deployment failed. Check Netlify logs for details."
           echo "Deploy Log URL: https://app.netlify.com/sites/$NETLIFY_SITE_NAME/deploys/${{ steps.deploy.outputs.deploy_id }}"
         env:
-          NETLIFY_SITE_NAME: ${{ secrets.NETLIFY_SITE_NAME }} 
+          NETLIFY_SITE_NAME: ${{ secrets.NETLIFY_SITE_NAME }}
+
+      - name: Fetch Netlify deploy log on failure
+        if: failure()
+        run: |
+          echo "Netlify Deploy Log:"
+          curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys/${{ steps.deploy.outputs.deploy_id }}/logs" \
+            | jq -r '.logs'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }} 
