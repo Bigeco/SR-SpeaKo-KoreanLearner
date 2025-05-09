@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
 import { SproutScore } from '../subtitle-view/components/SproutScore';
-import { getScoreLevel, FEEDBACK_MESSAGES, TEXT_COLORS, FEEDBACK_ICONS } from '../subtitle-view/components/ScoreDisplay';
 import TranscriptionCard from './components/TranscriptionCard';
 import RecordControls from '../../components/common/RecordControls';
 import { AudioRecorder } from '../../components/common/AudioRecorder';

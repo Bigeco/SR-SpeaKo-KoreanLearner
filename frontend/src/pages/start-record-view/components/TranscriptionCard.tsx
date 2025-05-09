@@ -37,8 +37,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   transcribedText,
   correctedText,
   isPlaying,
-  onPlayAudio,
-  renderHighlightedCorrections,
+  onPlayAudio
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
