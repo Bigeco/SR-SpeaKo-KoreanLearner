@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AudioWaveform } from '../../components/common/AudioWavefrom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
+import { SproutScore } from '../subtitle-view/components/SproutScore';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();
@@ -231,6 +232,14 @@ const StartRecordView: React.FC = () => {
       {/* 메인 콘텐츠 - 하단 요소들 공간 확보를 위한 패딩 추가 */}
       <div className="flex-1 flex flex-col items-center px-6 py-4 overflow-auto pb-44">
         <div className="w-full max-w-md">
+          {/* 새싹 캐릭터 UI */}
+          <div className="flex justify-center items-center mb-6 mt-9">
+            <div className={`transition-all duration-500 
+              ${recordingState === 'recording' ? 'opacity-60 grayscale' : 'opacity-100 grayscale-0'}`}>
+              <SproutScore score={accuracy ?? 0} size={120} />
+            </div>
+          </div>  
+
           {/* 안내 텍스트 */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-blue-600 mb-2">
