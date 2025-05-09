@@ -3,11 +3,11 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
-import { SproutScore } from '../subtitle-view/components/SproutScore';
+import { SproutScore } from './components/SproutScore';
 import TranscriptionCard from './components/TranscriptionCard';
 import RecordControls from '../../components/common/RecordControls';
 import { AudioRecorder } from '../../components/common/AudioRecorder';
-import { ScoreDisplay } from '../subtitle-view/components/ScoreDisplay';
+import { ScoreDisplay } from './components/ScoreDisplay';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();

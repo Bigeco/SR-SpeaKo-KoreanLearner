@@ -9,7 +9,6 @@ export const NavBar: React.FC = () => {
   // Navigation items with their paths and icons
   const navItems = [
     { path: '/', icon: Home, label: '홈' }, 
-    { path: '/subtitle', icon: Book, label: '발음' }, // 임시?
     { path: '/start-record', icon: Mic, label: '녹음' },
     { path: '/reels', icon: Video, label: '릴스' },
     { path: '/progress', icon: BarChart, label: '진행도' }, // 임시?
