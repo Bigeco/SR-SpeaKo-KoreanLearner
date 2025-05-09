@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { NavBar } from '../../components/layout/NavBar';
 import { ScoreDisplay } from './components/ScoreDisplay';
 import { PronunciationBlock } from './components/PronunciationBlock';
-import { Controls } from './components/Controls';
+import RecordControls from '../../components/common/RecordControls';
 import { AudioRecorder } from '../../components/common/AudioRecorder';
 import './styles/subtitle.css';
 
@@ -73,7 +73,7 @@ const SubtitleView = () => {
         fileName="subtitle-recording.wav"
       >
         {({ isRecording, startRecording, stopRecording }) => (
-          <Controls
+          <RecordControls
             isRecording={isRecording}
             showHelp={showHelp}
             onToggleRecording={isRecording ? stopRecording : startRecording}

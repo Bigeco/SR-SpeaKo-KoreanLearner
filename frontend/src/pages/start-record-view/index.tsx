@@ -1,10 +1,12 @@
-import { ArrowLeft, Mic, MicOff, RefreshCw, Volume2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
 import { SproutScore } from '../subtitle-view/components/SproutScore';
 import TranscriptionCard from './components/TranscriptionCard';
+import RecordControls from '../../components/common/RecordControls';
+import { AudioRecorder } from '../../components/common/AudioRecorder';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const StartRecordView: React.FC = () => {
   // 상태 관리
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'completed'>('idle');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   
   // 전사 및 교정 텍스트
   const [transcribedText, setTranscribedText] = useState<string>('');
@@ -56,30 +59,27 @@ const StartRecordView: React.FC = () => {
   };
   
   // 녹음 시작/중지 처리
-  const toggleRecording = () => {
-    if (recordingState === 'recording') {
+  const handleRecordingToggle = (isRecording: boolean) => {
+    if (isRecording) {
+      // 녹음 시작 처리
+      setRecordingState('recording');
+      setTranscribedText('');
+      setCorrectedText('');
+      setAccuracy(null);
+      
+      // 실시간 전사 시작
+      simulateRealTimeTranscription();
+    } else {
       // 녹음 중지 처리
       setRecordingState('completed');
       
-      // 실제로는 여기서 Whisper 모델의 최종 결과를 저장
-      // 시뮬레이션 용도로 약간의 오타가 있는 텍스트와 교정된 텍스트 설정
+      // 최종 결과 설정
       const finalTranscribed = "저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고 싶습니다.";
       const finalCorrected = "저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고 싶습니다.";
       
       setTranscribedText(finalTranscribed);
       setCorrectedText(finalCorrected);
-      
-      // 최종 정확도 계산 - 이 시점에서만 정확도 설정
       setAccuracy(87.7);
-    } else {
-      // 녹음 시작 처리
-      setRecordingState('recording');
-      setTranscribedText('');
-      setCorrectedText('');
-      setAccuracy(null); // 녹음 시작 시 정확도 초기화
-      
-      // Whisper 모델이 실시간으로 전사하는 것을 시뮬레이션
-      simulateRealTimeTranscription();
     }
   };
   
@@ -177,6 +177,9 @@ const StartRecordView: React.FC = () => {
     );
   };
 
+  // Add toggleHelp handler
+  const toggleHelp = () => setShowHelp((prev) => !prev);
+
   return (
     <div className="h-full flex flex-col bg-white relative">
       {/* 헤더 */}
@@ -241,19 +244,30 @@ const StartRecordView: React.FC = () => {
 
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
-        <button 
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all ${
-            recordingState === 'recording' ? 'bg-red-500 mic-button-active' : 'bg-gradient-to-br from-blue-500 to-blue-700'
-          }`} 
-          onClick={toggleRecording}
-          disabled={recordingState === 'completed'}
+        <AudioRecorder
+          onRecordingComplete={(audioUrl) => {
+            handleRecordingToggle(false);
+            console.log('녹음된 오디오 URL:', audioUrl);
+          }}
+          autoDownload={true}
+          fileName="start-recording.wav"
         >
-          {recordingState === 'recording' ? (
-            <MicOff size={24} className="text-white" />
-          ) : (
-            <Mic size={24} className="text-white" />
+          {({ isRecording, startRecording, stopRecording }) => (
+            <RecordControls
+              isRecording={isRecording}
+              showHelp={showHelp}
+              onToggleRecording={() => {
+                handleRecordingToggle(!isRecording);
+                if (isRecording) {
+                  stopRecording();
+                } else {
+                  startRecording();
+                }
+              }}
+              onToggleHelp={toggleHelp}
+            />
           )}
-        </button>
+        </AudioRecorder>
       </div>
 
       {/* 하단 네비게이션 바 - 고정 위치 */}
