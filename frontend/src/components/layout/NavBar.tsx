@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Book, Mic, Video, BarChart, Home } from 'lucide-react';
+import { Mic, Video, BarChart, Home } from 'lucide-react';
 
 export const NavBar: React.FC = () => {
   const navigate = useNavigate();

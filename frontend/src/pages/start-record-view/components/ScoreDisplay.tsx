@@ -35,7 +35,7 @@ export const getScoreLevel = (score: number) => {
   return 'LOW';
 };
 
-export const ScoreDisplay = ({ score, type }: ScoreDisplayProps) => {
+export const ScoreDisplay = ({ score, type: _type }: ScoreDisplayProps) => {
   const getScoreColor = () => TEXT_COLORS[getScoreLevel(score)];
 
   return (
