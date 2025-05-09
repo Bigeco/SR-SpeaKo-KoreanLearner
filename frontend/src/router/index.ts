@@ -4,7 +4,6 @@ import { createBrowserRouter } from 'react-router-dom';
 import App from '../App';
 import OnboardingView from '../pages/onboarding-view';
 import StartRecordView from '../pages/start-record-view';
-import SubtitleView from '../pages/subtitle-view';
 import OralStructureView from '../pages/oral-structure-view';
 import ProgressView from '../pages/progress-view';
 import ReelsView from '../pages/reels-view';
@@ -21,10 +20,6 @@ const router = createBrowserRouter([
   {
     path: "/start-record",
     element: React.createElement(StartRecordView),
-  },
-  {
-    path: "/subtitle",
-    element: React.createElement(SubtitleView),
   },
   {
     path: "/oral-structure",
