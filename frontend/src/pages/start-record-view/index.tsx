@@ -262,18 +262,6 @@ const StartRecordView: React.FC = () => {
               <p className="text-gray-800 text-lg">
                 {transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...')}
               </p>
-              
-              {recordingState === 'completed' && (
-                <div className="mt-2">
-                  <button 
-                    onClick={togglePlayback}
-                    className="flex items-center text-gray-500 text-sm"
-                  >
-                    <Volume2 size={16} className="mr-1" />
-                    {isPlaying ? '재생 중...' : '들어보기'}
-                  </button>
-                </div>
-              )}
             </div>
             
             {/* 교정된 텍스트 (completed 상태일 때만 표시) */}
@@ -287,6 +275,16 @@ const StartRecordView: React.FC = () => {
                 
                 {/* 비교 표시: 잘못된 부분 하이라이트 */}
                 {transcribedText !== correctedText && renderHighlightedCorrections()}
+
+                <div className="mt-2">
+                  <button 
+                    onClick={togglePlayback}
+                    className="flex items-center text-gray-500 text-sm"
+                  >
+                    <Volume2 size={16} className="mr-1" />
+                    {isPlaying ? '재생 중...' : '들어보기'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
