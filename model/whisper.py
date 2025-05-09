@@ -2,6 +2,8 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
 import librosa
+from data.audio import record_audio
+
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
@@ -23,8 +25,6 @@ pipe = pipeline(
     device=device,
 )
 
-audio_path = "../data/stt_test.mp3"
-audio_input, _ = librosa.load(audio_path, sr=16000)
-
+audio_input = record_audio()
 result = pipe(audio_input, generate_kwargs={"language": "ko"})
 print(result["text"])
