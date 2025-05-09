@@ -8,6 +8,7 @@ interface AudioRecorderProps {
     isRecording: boolean;
     startRecording: () => Promise<void>;
     stopRecording: () => void;
+    audioUrl: string | null;
   }) => React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   children
 }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null); // Audio URL state 추가
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -39,6 +41,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       recorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioUrl(audioUrl); // 녹음이 완료되면 audioUrl을 상태로 업데이트
 
         if (onRecordingComplete) {
           onRecordingComplete(audioUrl);
@@ -86,5 +89,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     };
   }, []);
 
-  return <>{children?.({ isRecording, startRecording, stopRecording })}</>;
+  return (
+    <>
+      {children?.({ isRecording, startRecording, stopRecording, audioUrl })}
+    </>
+  );
 };
