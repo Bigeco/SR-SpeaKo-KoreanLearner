@@ -276,20 +276,17 @@ const StartRecordView: React.FC = () => {
               )}
             </div>
             
-            {/* 교정된 텍스트 (recording 또는 completed 상태일 때 표시) */}
-            {(recordingState === 'recording' || recordingState === 'completed') && correctedText && (
+            {/* 교정된 텍스트 (completed 상태일 때만 표시) */}
+            {recordingState === 'completed' && correctedText && (
               <div className="p-4 bg-green-50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-green-600">교정된 문장</span>
-                  {recordingState === 'recording' && (
-                    <div className="text-xs text-green-600 animate-pulse">실시간 교정 중...</div>
-                  )}
                 </div>
                 
                 <p className="text-gray-800 text-lg">{correctedText}</p>
                 
-                {/* 비교 표시: 잘못된 부분 하이라이트 (completed 상태에서만) */}
-                {recordingState === 'completed' && transcribedText !== correctedText && renderHighlightedCorrections()}
+                {/* 비교 표시: 잘못된 부분 하이라이트 */}
+                {transcribedText !== correctedText && renderHighlightedCorrections()}
               </div>
             )}
           </div>
