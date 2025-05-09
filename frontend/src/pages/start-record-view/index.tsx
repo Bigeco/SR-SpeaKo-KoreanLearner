@@ -1,10 +1,10 @@
 import { ArrowLeft, Mic, MicOff, RefreshCw, Volume2 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AudioWaveform } from '../../components/common/AudioWavefrom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
 import { SproutScore } from '../subtitle-view/components/SproutScore';
+import TranscriptionCard from './components/TranscriptionCard';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();
@@ -137,36 +137,6 @@ const StartRecordView: React.FC = () => {
     return () => clearInterval(interval);
   };
   
-  // 정확도에 따른 색상 클래스 얻기
-  const getAccuracyColorClass = () => {
-    if (!accuracy) return 'text-gray-400';
-    
-    if (accuracy >= 90) return 'text-green-500';
-    if (accuracy >= 70) return 'text-blue-500';
-    if (accuracy >= 50) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-  
-  // 정확도에 따른 메시지 얻기
-  const getAccuracyMessage = () => {
-    if (!accuracy) return '';
-    
-    if (accuracy >= 90) return '매우 정확해요!';
-    if (accuracy >= 70) return '좋은 발음이에요!';
-    if (accuracy >= 50) return '꾸준히 연습하세요';
-    return '더 연습이 필요해요';
-  };
-  
-  // 정확도 바의 배경색 클래스 얻기
-  const getAccuracyBarColorClass = () => {
-    if (!accuracy) return '';
-    
-    if (accuracy >= 90) return 'bg-green-500';
-    if (accuracy >= 70) return 'bg-blue-500';
-    if (accuracy >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-  
   // 오디오 재생 토글 (실제로는 녹음된 오디오 재생)
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
@@ -175,14 +145,6 @@ const StartRecordView: React.FC = () => {
     if (!isPlaying) {
       setTimeout(() => setIsPlaying(false), 3000);
     }
-  };
-  
-  // 다시 녹음하기
-  const handleRerecord = () => {
-    setRecordingState('idle');
-    setTranscribedText('');
-    setCorrectedText('');
-    setAccuracy(null); // 정확도 초기화
   };
   
   // 전사 결과에서 교정된 부분 하이라이트
@@ -255,54 +217,14 @@ const StartRecordView: React.FC = () => {
           </div>
 
           {/* 전사 결과 카드 */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
-            {/* 원본 전사 텍스트 */}
-            <div className={`p-4 ${recordingState === 'completed' ? 'bg-gray-50 border-b' : ''}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-500">인식된 문장</span>
-                <div className="flex items-center h-8">
-                  <AudioWaveform 
-                    isActive={recordingState === 'recording'} 
-                    color="#4B5563" 
-                  />
-                </div>
-              </div>
-              
-              <p className="text-gray-800 text-lg">
-                {transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...')}
-              </p>
-            </div>
-            
-            {/* 교정된 텍스트 (completed 상태일 때만 표시) */}
-            {recordingState === 'completed' && correctedText && (
-              <div className="p-4 bg-green-50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-green-600">교정된 문장</span>
-                  <div className="flex items-center h-8">
-                    <AudioWaveform 
-                      isActive={isPlaying} 
-                      color="#059669" 
-                    />
-                  </div>
-                </div>
-                
-                <p className="text-gray-800 text-lg">{correctedText}</p>
-                
-                {/* 비교 표시: 잘못된 부분 하이라이트 */}
-                {transcribedText !== correctedText && renderHighlightedCorrections()}
-
-                <div className="mt-2">
-                  <button 
-                    onClick={togglePlayback}
-                    className="flex items-center text-gray-500 text-sm"
-                  >
-                    <Volume2 size={16} className="mr-1" />
-                    {isPlaying ? '재생 중...' : '들어보기'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <TranscriptionCard
+            recordingState={recordingState}
+            transcribedText={transcribedText}
+            correctedText={correctedText}
+            isPlaying={isPlaying}
+            onPlayAudio={togglePlayback}
+            renderHighlightedCorrections={renderHighlightedCorrections}
+          />
           
           {/* 추가 안내 (idle 상태일 때) */}
           {recordingState === 'idle' && (
@@ -316,33 +238,6 @@ const StartRecordView: React.FC = () => {
           <audio ref={audioRef} className="hidden" />
         </div>
       </div>
-
-      {/* 발음 정확도 표시 - 녹음 완료 상태일 때만 표시 */}
-      {recordingState === 'completed' && accuracy !== null && (
-        <div className="fixed bottom-16 left-0 right-0 w-full bg-white shadow-md border-t border-gray-100 py-2 px-4 z-10 result-fade-in">
-          <div className="flex items-center justify-between max-w-md mx-auto">
-            <div>
-              <span className="text-gray-600 text-sm">발음 정확도</span>
-              <div className="flex items-baseline">
-                <span className={`text-2xl font-bold ${getAccuracyColorClass()} accuracy-score`}>
-                  {accuracy}%
-                </span>
-                <span className={`ml-2 text-sm ${getAccuracyColorClass()}`}>
-                  {getAccuracyMessage()}
-                </span>
-              </div>
-            </div>
-            
-            {/* 정확도 바 */}
-            <div className="w-1/2 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className={`h-full ${getAccuracyBarColorClass()} transition-all duration-500 ease-out`}
-                style={{ width: `${accuracy}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
@@ -360,19 +255,6 @@ const StartRecordView: React.FC = () => {
           )}
         </button>
       </div>
-
-      {/* 작업 버튼 - 녹음 완료 상태일 때만 표시 */}
-      {recordingState === 'completed' && (
-        <div className="fixed bottom-20 left-0 right-0 flex justify-center">
-          <button 
-            onClick={handleRerecord}
-            className="flex items-center bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <RefreshCw size={18} className="mr-2" />
-            다시 녹음
-          </button>
-        </div>
-      )}
 
       {/* 하단 네비게이션 바 - 고정 위치 */}
       <div className="fixed bottom-0 left-0 right-0 w-full">
