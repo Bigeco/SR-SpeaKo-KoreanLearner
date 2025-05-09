@@ -25,6 +25,8 @@ pipe = pipeline(
     device=device,
 )
 
-audio_input = record_audio()
-result = pipe(audio_input, generate_kwargs={"language": "ko"})
-print(result["text"])
+def transcribe_speech() -> str:
+    audio_input = record_audio()
+    result = pipe(audio_input, generate_kwargs={"language": "ko"})
+
+    return result["text"]
