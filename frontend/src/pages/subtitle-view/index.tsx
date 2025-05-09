@@ -31,6 +31,9 @@ const SubtitleView = () => {
     // TODO: 여기에 녹음된 오디오 처리 로직 추가
   };
 
+  // 아래 한 줄은 빌드 에러 테스트용입니다. 커밋 후 반드시 제거하세요!
+  const errorTest: number = "이것은 숫자가 아닙니다";
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
