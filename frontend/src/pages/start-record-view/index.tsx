@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
 import { SproutScore } from '../subtitle-view/components/SproutScore';
+import { getScoreLevel, FEEDBACK_MESSAGES, TEXT_COLORS, FEEDBACK_ICONS } from '../subtitle-view/components/ScoreDisplay';
 import TranscriptionCard from './components/TranscriptionCard';
 import RecordControls from '../../components/common/RecordControls';
 import { AudioRecorder } from '../../components/common/AudioRecorder';
+import { ScoreDisplay } from '../subtitle-view/components/ScoreDisplay';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();
@@ -198,25 +200,29 @@ const StartRecordView: React.FC = () => {
       <div className="flex-1 flex flex-col items-center px-6 py-4 overflow-auto pb-44">
         <div className="w-full max-w-md">
           {/* 새싹 캐릭터 UI */}
-          <div className="flex justify-center items-center mb-6 mt-9">
+          <div className="flex flex-col items-center mb-6 mt-9">
             <div className={`transition-all duration-500 
               ${recordingState === 'recording' ? 'opacity-60 grayscale' : 'opacity-100 grayscale-0'}`}>
               <SproutScore score={accuracy ?? 0} size={120} />
             </div>
           </div>  
 
-          {/* 안내 텍스트 */}
+          {/* 안내 텍스트 및 정확도 표시 */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-blue-600 mb-2">
               {recordingState === 'idle' && '당신의 발음을 확인해 보세요'}
               {recordingState === 'recording' && '말하는 중...'}
               {recordingState === 'completed' && '인식이 완료되었습니다'}
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-2">
               {recordingState === 'idle' && '마이크 버튼을 누르고 자유롭게 말해보세요.'}
               {recordingState === 'recording' && '실시간으로 음성을 인식하고 있습니다.'}
               {recordingState === 'completed' && '인식된 문장과 교정된 문장을 확인하세요.'}
             </p>
+            {/* 정확도 수치와 피드백 메시지 */}
+            {recordingState === 'completed' && accuracy !== null && (
+              <ScoreDisplay score={accuracy} />
+            )}
           </div>
 
           {/* 전사 결과 카드 */}

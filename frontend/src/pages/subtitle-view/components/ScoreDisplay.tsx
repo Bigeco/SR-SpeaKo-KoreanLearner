@@ -13,14 +13,14 @@ export const FEEDBACK_MESSAGES = {
 } as const;
 
 export const FEEDBACK_ICONS = {
-  HIGH: <CheckCircle size={16} className="mr-1 text-blue-600" />,
-  MEDIUM: <AlertCircle size={16} className="mr-1 text-yellow-600" />,
+  HIGH: <CheckCircle size={16} className="mr-1 text-green-600" />,
+  MEDIUM: <AlertCircle size={16} className="mr-1 text-orange-500" />,
   LOW: <XCircle size={16} className="mr-1 text-red-600" />,
 } as const;
 
-const TEXT_COLORS = {
-  HIGH: 'text-blue-600',
-  MEDIUM: 'text-yellow-600',
+export const TEXT_COLORS = {
+  HIGH: 'text-green-600',
+  MEDIUM: 'text-orange-500',
   LOW: 'text-red-600',
 } as const;
 
@@ -39,12 +39,11 @@ export const ScoreDisplay = ({ score, type }: ScoreDisplayProps) => {
   const getScoreColor = () => TEXT_COLORS[getScoreLevel(score)];
 
   return (
-    <div className="text-center mb-8">
-      <div className="text-gray-600">발음 정확도</div>
+    <div className="text-center mb-3 mt-3">
       <div className={`text-4xl font-bold ${getScoreColor()}`}>
         {score.toFixed(1)}%
       </div>
-      <div className="flex items-center justify-center mt-4">
+      <div className="flex items-center justify-center mt-1">
         {FEEDBACK_ICONS[getScoreLevel(score)]}
         <span className={`text-sm ml-1 ${TEXT_COLORS[getScoreLevel(score)]}`}>
           {FEEDBACK_MESSAGES[getScoreLevel(score)]}
