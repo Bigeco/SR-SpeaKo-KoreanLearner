@@ -69,8 +69,7 @@ const StartRecordView: React.FC = () => {
       setCorrectedText(finalCorrected);
       
       // 최종 정확도 계산 - 이 시점에서만 정확도 설정
-      // 실제로는 calculateAccuracy 함수 사용
-      setAccuracy(83.3);
+      setAccuracy(calculateAccuracy(finalTranscribed, finalCorrected));
     } else {
       // 녹음 시작 처리
       setRecordingState('recording');
@@ -130,7 +129,7 @@ const StartRecordView: React.FC = () => {
         // 전사가 완료되면 자동으로 녹음 완료 상태로 전환
         setRecordingState('completed');
         // 최종 정확도 설정
-        setAccuracy(83.3);
+        setAccuracy(calculateAccuracy(transcriptionSteps[transcriptionSteps.length - 1], correctionSteps[correctionSteps.length - 1]));
       }
     }, 800); // 0.8초마다 업데이트
     
