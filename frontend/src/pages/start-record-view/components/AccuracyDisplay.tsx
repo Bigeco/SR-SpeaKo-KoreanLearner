@@ -9,7 +9,6 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({ accuracy, isVisible }
   // 정확도에 따른 메시지 얻기
   const getAccuracyMessage = () => {
     if (!accuracy) return '';
-    
     if (accuracy >= 90) return '매우 정확해요!';
     if (accuracy >= 70) return '좋은 발음이에요!';
     if (accuracy >= 50) return '꾸준히 연습하세요';
@@ -19,7 +18,6 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({ accuracy, isVisible }
   // 정확도에 따른 색상 클래스 얻기
   const getColorClass = () => {
     if (!accuracy) return '';
-    
     if (accuracy >= 90) return 'text-green-500';
     if (accuracy >= 70) return 'text-blue-500';
     if (accuracy >= 50) return 'text-yellow-500';
@@ -29,7 +27,6 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({ accuracy, isVisible }
   // 정확도 바의 배경색 클래스 얻기
   const getBarColorClass = () => {
     if (!accuracy) return '';
-    
     if (accuracy >= 90) return 'bg-green-500';
     if (accuracy >= 70) return 'bg-blue-500';
     if (accuracy >= 50) return 'bg-yellow-500';
