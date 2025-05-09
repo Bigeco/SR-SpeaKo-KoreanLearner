@@ -269,6 +269,12 @@ const StartRecordView: React.FC = () => {
               <div className="p-4 bg-green-50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-green-600">교정된 문장</span>
+                  <div className="flex items-center h-8">
+                    <AudioWaveform 
+                      isActive={isPlaying} 
+                      color="#059669" 
+                    />
+                  </div>
                 </div>
                 
                 <p className="text-gray-800 text-lg">{correctedText}</p>
