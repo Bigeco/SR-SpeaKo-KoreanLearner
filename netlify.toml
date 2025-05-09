@@ -1,6 +1,6 @@
 [build]
-  command = "cd frontend && yarn install && yarn build && curl -X POST https://speako-kor.netlify.app/.netlify/functions/trigger-github-actions"
-  publish = "frontend/dist"
+  command = "yarn install && yarn build && curl -X POST https://speako-kor.netlify.app/.netlify/functions/trigger-github-actions"
+  publish = "dist"
 
 [functions]
-  directory = "frontend/netlify/functions"
+  directory = "netlify/functions"
