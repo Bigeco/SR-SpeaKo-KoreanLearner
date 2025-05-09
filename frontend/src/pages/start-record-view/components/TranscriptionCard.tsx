@@ -56,8 +56,12 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
               onClick={onPlayAudio}
               className="flex items-center text-gray-500 text-sm"
             >
-              <Volume2 size={16} className="mr-1" />
-              {isPlaying ? '재생 중...' : '들어보기'}
+              <span className="flex items-center">
+                <Volume2 size={16} className="mr-1 relative top-[1px]" />
+              </span>
+              <span className="leading-none">
+                {isPlaying ? '재생 중...' : '들어보기'}
+              </span>
             </button>
           </div>
         </div>
