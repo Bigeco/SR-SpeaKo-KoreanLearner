@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/start-record.css';
@@ -26,6 +26,15 @@ const StartRecordView: React.FC = () => {
   
   // 오디오 요소 참조
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // recordingState를 ref로 추적
+  const recordingStateRef = useRef(recordingState);
+  useEffect(() => { recordingStateRef.current = recordingState; }, [recordingState]);
+  
+  // 시뮬레이션 interval을 ref로 저장
+  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // 마지막 인덱스 추적
+  const lastIndexRef = useRef(0);
   
   // 페이지 이벤트 핸들러
   const handleGoBack = () => navigate(-1);
@@ -62,31 +71,52 @@ const StartRecordView: React.FC = () => {
   // 녹음 시작/중지 처리
   const handleRecordingToggle = (isRecording: boolean) => {
     if (isRecording) {
-      // 녹음 시작 처리
       setRecordingState('recording');
       setTranscribedText('');
       setCorrectedText('');
       setAccuracy(null);
-      
-      // 실시간 전사 시작
       simulateRealTimeTranscription();
     } else {
-      // 녹음 중지 처리
+      // 녹음 중지 처리: 시뮬레이션 interval을 멈추고, 그 시점의 텍스트로 결과 화면을 띄움
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+        simulationIntervalRef.current = null;
+      }
+      // 마지막 인덱스의 텍스트로 결과 설정
+      const transcriptionSteps = [
+        '저는',
+        '저는 한국어를',
+        '저는 한국어를 배',
+        '저는 한국어를 배오고',
+        '저는 한국어를 배오고 있',
+        '저는 한국어를 배오고 있서요.',
+        '저는 한국어를 배오고 있서요. 발음이',
+        '저는 한국어를 배오고 있서요. 발음이 정확한지',
+        '저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고',
+        '저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고 싶습니다.'
+      ];
+      const correctionSteps = [
+        '저는',
+        '저는 한국어를',
+        '저는 한국어를 배',
+        '저는 한국어를 배우고',
+        '저는 한국어를 배우고 있',
+        '저는 한국어를 배우고 있어요.',
+        '저는 한국어를 배우고 있어요. 발음이',
+        '저는 한국어를 배우고 있어요. 발음이 정확한지',
+        '저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고',
+        '저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고 싶습니다.'
+      ];
+      const idx = lastIndexRef.current > 0 ? lastIndexRef.current - 1 : 0;
+      setTranscribedText(transcriptionSteps[idx]);
+      setCorrectedText(correctionSteps[idx]);
+      setAccuracy(calculateAccuracy(transcriptionSteps[idx], correctionSteps[idx]));
       setRecordingState('completed');
-      
-      // 최종 결과 설정
-      const finalTranscribed = "저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고 싶습니다.";
-      const finalCorrected = "저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고 싶습니다.";
-      
-      setTranscribedText(finalTranscribed);
-      setCorrectedText(finalCorrected);
-      setAccuracy(87.7);
     }
   };
   
   // 실시간 전사 시뮬레이션 (실제로는 Whisper API와 연결 필요)
   const simulateRealTimeTranscription = () => {
-    // 시뮬레이션용 전사 데이터
     const transcriptionSteps = [
       '저는',
       '저는 한국어를',
@@ -99,8 +129,6 @@ const StartRecordView: React.FC = () => {
       '저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고',
       '저는 한국어를 배오고 있서요. 발음이 정확한지 확인하고 싶습니다.'
     ];
-    
-    // 교정 데이터
     const correctionSteps = [
       '저는',
       '저는 한국어를',
@@ -113,29 +141,27 @@ const StartRecordView: React.FC = () => {
       '저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고',
       '저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고 싶습니다.'
     ];
-    
     let currentIndex = 0;
-    
-    // 단계별로 전사 및 교정 결과 업데이트
-    const interval = setInterval(() => {
+    lastIndexRef.current = 0;
+    if (simulationIntervalRef.current) {
+      clearInterval(simulationIntervalRef.current);
+    }
+    simulationIntervalRef.current = setInterval(() => {
+      if (recordingStateRef.current !== 'recording') {
+        clearInterval(simulationIntervalRef.current!);
+        simulationIntervalRef.current = null;
+        return;
+      }
       if (currentIndex < transcriptionSteps.length) {
         setTranscribedText(transcriptionSteps[currentIndex]);
         setCorrectedText(correctionSteps[currentIndex]);
-        
-        // 실시간 정확도 계산 부분 제거
-        // 녹음 완료 시에만 정확도 표시
-        
+        lastIndexRef.current = currentIndex;
         currentIndex++;
       } else {
-        clearInterval(interval);
-        // 전사가 완료되면 자동으로 녹음 완료 상태로 전환
-        setRecordingState('completed');
-        // 최종 정확도 설정
-        setAccuracy(calculateAccuracy(transcriptionSteps[transcriptionSteps.length - 1], correctionSteps[correctionSteps.length - 1]));
+        clearInterval(simulationIntervalRef.current!);
+        simulationIntervalRef.current = null;
       }
-    }, 800); // 0.8초마다 업데이트
-    
-    return () => clearInterval(interval);
+    }, 800);
   };
   
   // 오디오 재생 토글 (실제로는 녹음된 오디오 재생)
