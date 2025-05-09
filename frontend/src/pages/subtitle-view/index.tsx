@@ -51,7 +51,7 @@ const SubtitleView = () => {
 
         {/* Practice Phrases */}
         <div className="w-full space-y-4 mb-8">
-          <PronunciationBlock
+          {/* <PronunciationBlock
             type="model"
             text="안녕하세요 오늘 날씨가 참 좋아요"
             isPlaying={isPlaying}
@@ -63,7 +63,7 @@ const SubtitleView = () => {
             text="안녕하세요 오늘 날씨가 잠 좋아요"
             score={score}
             isRecording={recording}
-          />
+          /> */}
         </div>
       </div>
 
