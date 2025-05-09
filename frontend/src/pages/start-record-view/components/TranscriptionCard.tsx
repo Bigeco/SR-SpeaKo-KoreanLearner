@@ -11,6 +11,27 @@ interface TranscriptionCardProps {
   renderHighlightedCorrections: () => React.ReactNode;
 }
 
+// Add a helper function for character-level diff highlighting
+function highlightDiffChars(original: string, corrected: string, type: 'transcribed' | 'corrected') {
+  const maxLen = Math.max(original.length, corrected.length);
+  const originalChars = original.split('');
+  const correctedChars = corrected.split('');
+  return Array.from({ length: maxLen }).map((_, i) => {
+    const o = originalChars[i] || '';
+    const c = correctedChars[i] || '';
+    if (o !== c) {
+      if (type === 'transcribed' && o) {
+        return <span key={i} className="text-red-500 line-through">{o}</span>;
+      }
+      if (type === 'corrected' && c) {
+        return <span key={i} className="text-green-600 font-semibold">{c}</span>;
+      }
+    }
+    // unchanged
+    return <span key={i}>{type === 'transcribed' ? o : c}</span>;
+  });
+}
+
 const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   recordingState,
   transcribedText,
@@ -33,7 +54,24 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
           </div>
         </div>
         <p className="text-gray-800 text-lg">
-          {transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...')}
+          {(() => {
+            if (recordingState !== 'completed' || !transcribedText || !correctedText) {
+              return transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...');
+            }
+            const transcribedWords = transcribedText.split(' ');
+            const correctedWords = correctedText.split(' ');
+            return transcribedWords.map((word, idx) => {
+              const isChanged = word !== correctedWords[idx];
+              if (isChanged) {
+                return (
+                  <span key={idx} className="mr-1">
+                    {highlightDiffChars(word, correctedWords[idx] || '', 'transcribed')}
+                  </span>
+                );
+              }
+              return <span key={idx} className="mr-1">{word}</span>;
+            });
+          })()}
         </p>
       </div>
       {/* 교정된 텍스트 (completed 상태일 때만 표시) */}
@@ -48,9 +86,23 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
               />
             </div>
           </div>
-          <p className="text-gray-800 text-lg">{correctedText}</p>
-          {/* 비교 표시: 잘못된 부분 하이라이트 */}
-          {renderHighlightedCorrections()}
+          <p className="text-gray-800 text-lg">
+            {(() => {
+              const transcribedWords = transcribedText.split(' ');
+              const correctedWords = correctedText.split(' ');
+              return correctedWords.map((word, idx) => {
+                const isChanged = word !== transcribedWords[idx];
+                if (isChanged) {
+                  return (
+                    <span key={idx} className="mr-1">
+                      {highlightDiffChars(transcribedWords[idx] || '', word, 'corrected')}
+                    </span>
+                  );
+                }
+                return <span key={idx} className="mr-1">{word}</span>;
+              });
+            })()}
+          </p>
           <div className="mt-2">
             <button 
               onClick={onPlayAudio}
