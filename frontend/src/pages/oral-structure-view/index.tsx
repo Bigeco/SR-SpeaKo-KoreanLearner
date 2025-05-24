@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/oral-structure.css';
+
 // 한국어 음소 데이터 (실제로는 분석된 틀린 음소만 표시)
 const consonantData = [
   {
