@@ -1,13 +1,13 @@
-import { ArrowLeft } from 'lucide-react';
-import React, { useRef, useState, useEffect } from 'react';
+import { ArrowLeft, Plus } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AudioRecorder } from '../../components/common/AudioRecorder';
+import RecordControls from '../../components/common/RecordControls';
 import { NavBar } from '../../components/layout/NavBar';
-import './styles/start-record.css';
+import { ScoreDisplay } from './components/ScoreDisplay';
 import { SproutScore } from './components/SproutScore';
 import TranscriptionCard from './components/TranscriptionCard';
-import RecordControls from '../../components/common/RecordControls';
-import { AudioRecorder } from '../../components/common/AudioRecorder';
-import { ScoreDisplay } from './components/ScoreDisplay';
+import './styles/start-record.css';
 
 const StartRecordView: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +24,9 @@ const StartRecordView: React.FC = () => {
   // 발음 정확도 - 녹음 완료 시에만 설정
   const [accuracy, setAccuracy] = useState<number | null>(null);
   
+  // 틀린 음소들 (실제로는 AI 분석 결과에서 가져올 데이터)
+  const [incorrectPhonemes, setIncorrectPhonemes] = useState<string[]>([]);
+  
   // 오디오 요소 참조
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -38,6 +41,15 @@ const StartRecordView: React.FC = () => {
   
   // 페이지 이벤트 핸들러
   const handleGoBack = () => navigate(-1);
+  
+  // 구강 구조 페이지로 이동
+  const handleOralStructureView = () => {
+    navigate('/oral-structure', {
+      state: {
+        incorrectPhonemes: incorrectPhonemes.length > 0 ? incorrectPhonemes : ['ㄱ', 'ㅓ', 'ㄹ'] // 예시 데이터
+      }
+    });
+  };
   
   // 발음 정확도 계산 (두 텍스트 간의 유사도 기반)
   const calculateAccuracy = (original: string, corrected: string): number => {
@@ -68,6 +80,44 @@ const StartRecordView: React.FC = () => {
     return Math.round(accuracyValue * 10) / 10;
   };
   
+  // 틀린 음소 분석 (시뮬레이션 - 실제로는 AI가 분석)
+  const analyzeIncorrectPhonemes = (original: string, corrected: string): string[] => {
+    // 실제 구현에서는 더 정교한 음성학적 분석이 필요
+    // 여기서는 간단한 예시로 시뮬레이션
+    
+    /*
+    const phonemeMap: { [key: string]: string[] } = {
+      '배오고': ['ㅂ', 'ㅐ', 'ㅇ', 'ㅗ', 'ㄱ', 'ㅗ'],
+      '배우고': ['ㅂ', 'ㅐ', 'ㅇ', 'ㅜ', 'ㄱ', 'ㅗ'],
+      '있서요': ['ㅇ', 'ㅣ', 'ㅅ', 'ㅅ', 'ㅓ', 'ㅇ', 'ㅛ'],
+      '있어요': ['ㅇ', 'ㅣ', 'ㅅ', 'ㅅ', 'ㅓ', 'ㅇ', 'ㅛ']
+    };
+    */
+   
+    const incorrectPhonemes: string[] = [];
+    
+    // 간단한 단어별 비교
+    const originalWords = original.split(' ');
+    const correctedWords = corrected.split(' ');
+    
+    for (let i = 0; i < originalWords.length; i++) {
+      if (originalWords[i] !== correctedWords[i]) {
+        // 예시: '배오고' vs '배우고' -> 'ㅗ' vs 'ㅜ' 차이
+        if (originalWords[i] === '배오고' && correctedWords[i] === '배우고') {
+          incorrectPhonemes.push('ㅗ', 'ㅜ');
+        }
+        // 예시: '있서요' vs '있어요' -> 'ㅅ' vs 'ㅇ' 차이  
+        if (originalWords[i] === '있서요' && correctedWords[i] === '있어요') {
+          incorrectPhonemes.push('ㅅ', 'ㅇ');
+        }
+      }
+    }
+    
+    // 중복 제거 및 기본값
+    const uniquePhonemes = [...new Set(incorrectPhonemes)];
+    return uniquePhonemes.length > 0 ? uniquePhonemes : ['ㄱ', 'ㅓ', 'ㄹ'];
+  };
+  
   // 녹음 시작/중지 처리
   const handleRecordingToggle = (isRecording: boolean) => {
     if (isRecording) {
@@ -75,6 +125,7 @@ const StartRecordView: React.FC = () => {
       setTranscribedText('');
       setCorrectedText('');
       setAccuracy(null);
+      setIncorrectPhonemes([]);
       simulateRealTimeTranscription();
     } else {
       // 녹음 중지 처리: 시뮬레이션 interval을 멈추고, 그 시점의 텍스트로 결과 화면을 띄움
@@ -108,9 +159,13 @@ const StartRecordView: React.FC = () => {
         '저는 한국어를 배우고 있어요. 발음이 정확한지 확인하고 싶습니다.'
       ];
       const idx = lastIndexRef.current > 0 ? lastIndexRef.current - 1 : 0;
-      setTranscribedText(transcriptionSteps[idx]);
-      setCorrectedText(correctionSteps[idx]);
-      setAccuracy(calculateAccuracy(transcriptionSteps[idx], correctionSteps[idx]));
+      const finalTranscribed = transcriptionSteps[idx];
+      const finalCorrected = correctionSteps[idx];
+      
+      setTranscribedText(finalTranscribed);
+      setCorrectedText(finalCorrected);
+      setAccuracy(calculateAccuracy(finalTranscribed, finalCorrected));
+      setIncorrectPhonemes(analyzeIncorrectPhonemes(finalTranscribed, finalCorrected));
       setRecordingState('completed');
     }
   };
@@ -268,10 +323,41 @@ const StartRecordView: React.FC = () => {
             </div>
           )}
           
+          {/* 분석된 틀린 음소 미리보기 (completed 상태일 때만) */}
+          {recordingState === 'completed' && incorrectPhonemes.length > 0 && (
+            <div className="bg-orange-50 rounded-lg p-4 mt-4">
+              <h3 className="text-sm font-semibold text-orange-700 mb-2">개선이 필요한 발음</h3>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {incorrectPhonemes.map((phoneme, index) => (
+                  <span 
+                    key={index}
+                    className="inline-block bg-orange-200 text-orange-800 px-2 py-1 rounded text-sm font-medium"
+                  >
+                    {phoneme}
+                  </span>
+                ))}
+              </div>
+              <p className="text-orange-600 text-xs">
+                구강 구조 학습을 통해 정확한 발음법을 익혀보세요!
+              </p>
+            </div>
+          )}
+          
           {/* 숨겨진 오디오 요소 */}
           <audio ref={audioRef} className="hidden" />
         </div>
       </div>
+
+      {/* 구강 구조 학습 버튼 - completed 상태일 때만 표시 */}
+      {recordingState === 'completed' && (
+        <button
+          onClick={handleOralStructureView}
+          className="fixed bottom-44 right-6 w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all duration-200 hover:scale-110 z-20"
+          title="구강 구조 학습하기"
+        >
+          <Plus size={20} />
+        </button>
+      )}
 
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
