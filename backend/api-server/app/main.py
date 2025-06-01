@@ -1,14 +1,5 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.router import router
+from app.router import router  # app/ 안에 있으면 경로 주의
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 프론트에서 요청 허용
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 app.include_router(router)
