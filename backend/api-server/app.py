@@ -1,10 +1,10 @@
-import asyncio
-import json
+"""TODO: 모델 프레임워크 돌아가도록 구현
+"""
+
 import logging
-import numpy as np
-from faster_whisper import WhisperModel
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # 로깅 설정
@@ -18,161 +18,144 @@ app = FastAPI(
     version="1.0.0"
 )
 
-class WhisperService:
-    def __init__(self):
-        self.model = None
-        self.load_model()
-    
-    def load_model(self):
-        """Whisper 모델 로드 (CPU 최적화)"""
-        try:
-            logger.info("Loading Whisper model...")
-            # CPU에서 빠른 faster-whisper 사용
-            self.model = WhisperModel(
-                "tiny",  # tiny, base, small 중 선택
-                device="cpu",
-                compute_type="int8",  # CPU 최적화
-                num_workers=1
-            )
-            logger.info("Whisper model loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load model: {e}")
-    
-    async def transcribe_audio(self, audio_data: bytes) -> dict:
-        """오디오 데이터를 텍스트로 변환"""
-        try:
-            # 바이트 데이터를 numpy 배열로 변환
-            audio_np = np.frombuffer(audio_data, dtype=np.float32)
-            
-            # 오디오 길이 체크 (너무 짧으면 스킵)
-            if len(audio_np) < 1600:  # 0.1초 미만
-                return {"text": "", "confidence": 0.0}
-            
-            # 백그라운드에서 전사 실행
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, self._transcribe, audio_np
-            )
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"Transcription error: {e}")
-            return {"text": "", "error": str(e)}
-    
-    def _transcribe(self, audio_np: np.ndarray) -> dict:
-        """실제 전사 작업 (별도 스레드에서 실행)"""
-        try:
-            if self.model and hasattr(self.model, 'transcribe'):
-                # faster-whisper 사용
-                segments, info = self.model.transcribe(
-                    audio_np,
-                    language="ko",
-                    vad_filter=True,
-                    vad_parameters=dict(min_silence_duration_ms=500)
-                )
-                
-                text = " ".join([segment.text for segment in segments])
-                confidence = info.language_probability if hasattr(info, 'language_probability') else 0.9
-                
-                return {
-                    "text": text.strip(),
-                    "confidence": confidence,
-                    "language": "ko"
-                }
-            else:
-                return {"text": "모델이 로드되지 않음", "error": "Model not loaded"}
-                
-        except Exception as e:
-            logger.error(f"Model transcription error: {e}")
-            return {"text": "", "error": str(e)}
-
-# 전역 서비스 인스턴스
-whisper_service = WhisperService()
+# CORS 설정 추가
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """기본 페이지 - 서비스 상태 확인"""
+    """기본 페이지"""
     return """
-    
-    
-    
-        Korean Speech Recognition
-        
-    
-    
-        🎤 Korean Speech Recognition API
-        실시간 한국어 음성 인식 서비스가 실행 중입니다.
-        
-        API 엔드포인트:
-        
-            WebSocket /ws - 실시간 음성 인식
-            POST /transcribe - 파일 업로드 음성 인식
-            GET /health - 헬스 체크
-        
-        
-        WebSocket 테스트:
-        
-            // 간단한 WebSocket 연결 테스트
-            function testWebSocket() {
-                const ws = new WebSocket(`wss://${window.location.host}/ws`);
-                ws.onopen = () => console.log('WebSocket 연결됨');
-                ws.onmessage = (event) => console.log('받은 메시지:', event.data);
-                ws.onerror = (error) => console.error('WebSocket 오류:', error);
-            }
-        
-        WebSocket 연결 테스트
-    
-    
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Korean Speech Recognition</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+            .endpoint { background: white; padding: 10px; margin: 10px 0; border-radius: 4px; }
+            button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+            button:hover { background: #0056b3; }
+            .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+            .success { background: #d4edda; color: #155724; }
+            .error { background: #f8d7da; color: #721c24; }
+            .warning { background: #fff3cd; color: #856404; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎤 Korean Speech Recognition API</h1>
+            <p>실시간 한국어 음성 인식 서비스가 실행 중입니다.</p>
+            
+            <h3>API 엔드포인트:</h3>
+            <div class="endpoint">WebSocket /ws - 실시간 음성 인식</div>
+            <div class="endpoint">POST /transcribe - 파일 업로드 음성 인식</div>
+            <div class="endpoint">GET /health - 헬스 체크</div>
+            
+            <h3>WebSocket 테스트:</h3>
+            <button onclick="testWebSocket()">WebSocket 연결 테스트</button>
+            <div id="status"></div>
+            
+            <script>
+                function testWebSocket() {
+                    const status = document.getElementById('status');
+                    status.innerHTML = '<div class="status warning">연결 시도 중...</div>';
+                    
+                    try {
+                        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                        const wsUrl = `${protocol}//${window.location.host}/ws`;
+                        console.log('WebSocket URL:', wsUrl);
+                        
+                        const ws = new WebSocket(wsUrl);
+                        let messageReceived = false;
+                        
+                        ws.onopen = () => {
+                            console.log('WebSocket 연결됨');
+                            status.innerHTML = '<div class="status success">✅ WebSocket 연결 성공! 메시지 전송 중...</div>';
+                            
+                            // 텍스트 메시지 전송
+                            ws.send('ping');
+                        };
+                        
+                        ws.onmessage = (event) => {
+                            messageReceived = true;
+                            console.log('받은 메시지:', event.data);
+                            try {
+                                const data = JSON.parse(event.data);
+                                status.innerHTML = '<div class="status success">✅ 서버 응답 수신 성공!</div>';
+                                
+                                // 3초 후 정상적으로 연결 종료
+                                setTimeout(() => {
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        ws.close(1000, 'Test completed successfully');
+                                    }
+                                }, 3000);
+                            } catch (e) {
+                                status.innerHTML = '<div class="status success">✅ 텍스트 메시지 수신: ' + event.data + '</div>';
+                                setTimeout(() => {
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        ws.close(1000, 'Test completed successfully');
+                                    }
+                                }, 3000);
+                            }
+                        };
+                        
+                        ws.onerror = (error) => {
+                            console.error('WebSocket 오류:', error);
+                            status.innerHTML = '<div class="status error">❌ WebSocket 연결 실패</div>';
+                        };
+                        
+                        ws.onclose = (event) => {
+                            console.log('WebSocket 연결 종료', event.code, event.reason);
+                            
+                            if (event.code === 1000) {
+                                status.innerHTML = '<div class="status success">✅ WebSocket 테스트 완료 (정상 종료)</div>';
+                            } else if (messageReceived) {
+                                status.innerHTML = '<div class="status success">✅ 메시지 교환 성공 (코드: ' + event.code + ')</div>';
+                            } else {
+                                status.innerHTML = '<div class="status error">❌ WebSocket 연결이 예기치 않게 종료됨 (코드: ' + event.code + ')</div>';
+                            }
+                        };
+                        
+                        // 10초 후 타임아웃
+                        setTimeout(() => {
+                            if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
+                                if (!messageReceived) {
+                                    status.innerHTML = '<div class="status error">❌ 응답 타임아웃</div>';
+                                    ws.close();
+                                }
+                            }
+                        }, 10000);
+                        
+                    } catch (error) {
+                        console.error('WebSocket 테스트 오류:', error);
+                        status.innerHTML = '<div class="status error">❌ WebSocket 테스트 실패: ' + error.message + '</div>';
+                    }
+                }
+            </script>
+        </div>
+    </body>
+    </html>
     """
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket을 통한 실시간 음성 인식"""
-    await websocket.accept()
-    logger.info("WebSocket 연결 수락됨")
-    
-    try:
-        while True:
-            # 클라이언트로부터 오디오 데이터 수신
-            data = await websocket.receive_bytes()
-            
-            # 음성 인식 처리
-            result = await whisper_service.transcribe_audio(data)
-            
-            # 결과를 JSON으로 전송
-            await websocket.send_text(json.dumps(result, ensure_ascii=False))
-            
-    except WebSocketDisconnect:
-        logger.info("WebSocket 연결 종료")
-    except Exception as e:
-        logger.error(f"WebSocket 오류: {e}")
-        await websocket.close()
-
-@app.post("/transcribe")
-async def transcribe_file(file: UploadFile = File(...)):
-    """파일 업로드를 통한 음성 인식"""
-    try:
-        # 파일 데이터 읽기
-        audio_data = await file.read()
-        
-        # 음성 인식 처리
-        result = await whisper_service.transcribe_audio(audio_data)
-        
-        return {
-            "filename": file.filename,
-            "transcription": result
-        }
-        
-    except Exception as e:
-        logger.error(f"파일 전사 오류: {e}")
-        return {"error": str(e)}
 
 @app.get("/health")
 async def health_check():
     """헬스 체크"""
     return {
         "status": "healthy",
-        "model": "whisper-base-cpu",
+        "model": "?",
         "language": "korean",
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("🚀 Korean Speech Recognition API 서버 시작됨")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
