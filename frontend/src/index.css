@@ -50,3 +50,11 @@ body {
   transform: translateY(-10px);
   transition: opacity 300ms, transform 300ms;
 }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  touch-action: manipulation;
+}

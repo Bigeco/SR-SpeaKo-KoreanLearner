@@ -1,8 +1,14 @@
 .onboarding-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   padding: 20px;
+  background-image: url('../../../assets/onboard_ui.png');
+  background-size: cover;
+  background-position: center;
+  color: #E4D8CA;
+  overflow: hidden;
 }
 
 .onboarding-content {

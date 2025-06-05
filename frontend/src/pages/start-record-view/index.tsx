@@ -486,7 +486,7 @@ const StartRecordView: React.FC = () => {
   const toggleHelp = () => setShowHelp((prev) => !prev);
 
   return (
-    <div className="h-full flex flex-col bg-white relative">
+    <div className="start-record-container">
       {/* 헤더 */}
       <div className="flex justify-between items-center p-6 border-b border-gray-100">
         <button 
