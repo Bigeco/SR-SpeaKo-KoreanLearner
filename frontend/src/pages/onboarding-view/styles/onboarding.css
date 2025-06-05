@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'DMSerifDisplay';
+  src: url('../../../assets/fonts/DMSerifDisplay-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .onboarding-container {
   display: flex;
   flex-direction: column;
@@ -14,7 +21,8 @@
 .onboarding-content {
   flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -23,4 +31,37 @@
   display: flex;
   justify-content: center;
   gap: 10px;
+}
+
+.control-button {
+  width: 90vw;
+  max-width: 340px;
+  padding: 18px 0;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.32);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+  border: none;
+  outline: none;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+  margin: 0 auto;
+  display: block;
+}
+.control-button:hover, .control-button:active {
+  background: rgba(255,255,255,0.5);
+  color: #fff;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+}
+
+.welcome-title {
+  font-family: 'DMSerifDisplay', serif !important;
+  font-size: 3rem !important;
+  font-weight: bold !important;
+  letter-spacing: 0.01em;
+  margin-top: 7vh;
+  margin-bottom: 1.2rem;
+  color: #fff;
+  display: block;
 } 
