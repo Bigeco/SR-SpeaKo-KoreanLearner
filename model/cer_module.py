@@ -151,25 +151,28 @@ def transcribe_audio(file_path, model_name="daeunn/wav2vec2-korean-finetuned2"):
 
 
 if __name__ == "__main__":
-    # reference = "안녕하세요, 반갑 습니다!"
+    # 동일한 문장에 대한 두 번의 녹음
     reference = "제가 스웨덴에서 왔고, 우리나라가 큰 나라이지만 인구가 좀 적어서 학생이라도 재밌게 할 수 있는게 많이 없고 카페나 술집이나 이런게 많이 없어서 그런 거 한국에 많이 있다고 들었고 그거 때문에 한국에 공부하러 왔어요."
-    
-    audio_path = "../data/stt_test.wav"
-    hypothesis = transcribe_audio(audio_path)
-    print("wav2vec2 변환:", hypothesis)
-    # 기본 설정(공백, 문장부호 제거)으로 CER 계산
-    cer_result = calculate_korean_cer(reference, hypothesis)
-    print(f"CER (기본 설정): {cer_result['cer']}")
-    print(f"세부 정보: 대체={cer_result['substitutions']}, 삭제={cer_result['deletions']}, 삽입={cer_result['insertions']}")
-    
-    # 문장부호는 유지하고 CER 계산
-    cer_result2 = calculate_korean_cer(reference, hypothesis, remove_spaces=True, remove_punctuation=False)
-    print(f"CER (문장부호 유지): {cer_result2['cer']}")
-    
-    # 공백과 문장부호 모두 유지하고 CER 계산
-    cer_result3 = calculate_korean_cer(reference, hypothesis, remove_spaces=False, remove_punctuation=False)
-    print(f"CER (공백, 문장부호 유지): {cer_result3['cer']}")
-    
-    # 정확도(CRR) 계산
-    crr_result = calculate_korean_crr(reference, hypothesis)
-    print(f"정확도(CRR): {crr_result['crr']}")
+
+    audio_path1 = "../data/stt_test.wav"
+    audio_path2 = "../data/stt_test.wav" # 파일 변경 필요요
+
+    # 첫 번째 오디오 처리
+    print("\n[첫 번째 발화 STT 및 정확도 평가]")
+    hypothesis1 = transcribe_audio(audio_path1)
+    print("예측 1:", hypothesis1)
+
+    crr_result1 = calculate_korean_crr(reference, hypothesis1)
+    print(f"CRR #1: {crr_result1['crr']} (대체={crr_result1['substitutions']}, 삭제={crr_result1['deletions']}, 삽입={crr_result1['insertions']})")
+
+    # 두 번째 오디오 처리
+    print("\n[두 번째 발화 STT 및 정확도 평가]")
+    hypothesis2 = transcribe_audio(audio_path2)
+    print("예측 2:", hypothesis2)
+
+    crr_result2 = calculate_korean_crr(reference, hypothesis2)
+    print(f"CRR #2: {crr_result2['crr']} (대체={crr_result2['substitutions']}, 삭제={crr_result2['deletions']}, 삽입={crr_result2['insertions']})")
+
+    # 정확도 변화량 출력
+    diff = round(crr_result2['crr'] - crr_result1['crr'], 4)
+    print(f"\n 동일 문장 재발화에 따른 CRR 변화량: {diff:+.4f}")
