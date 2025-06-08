@@ -1,7 +1,9 @@
 import re
 
 import numpy as np
-
+import torch
+import torchaudio
+from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 
 def preprocess_text(text, remove_spaces=False, remove_punctuation=False):
     """
@@ -128,11 +130,33 @@ def calculate_korean_crr(reference, hypothesis, remove_spaces=True, remove_punct
 
     return result
 
-'''
+def transcribe_audio(file_path, model_name="daeunn/wav2vec2-korean-finetuned2"):
+    # 모델 및 프로세서 로드
+    processor = Wav2Vec2Processor.from_pretrained(model_name)
+    model = Wav2Vec2ForCTC.from_pretrained(model_name)
+
+    # 오디오 파일 로드 및 16kHz 리샘플링
+    waveform, sample_rate = torchaudio.load(file_path)
+    if sample_rate != 16000:
+        waveform = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(waveform)
+    input_values = processor(waveform.squeeze().numpy(), sampling_rate=16000, return_tensors="pt", padding=True)
+
+    # 추론
+    with torch.no_grad():
+        logits = model(**input_values).logits
+    predicted_ids = torch.argmax(logits, dim=-1)
+    transcription = processor.decode(predicted_ids[0])
+
+    return transcription
+
+
 if __name__ == "__main__":
-    reference = "안녕하세요, 반갑 습니다!"
-    hypothesis = "안녕하세여, 반갑습니다."
+    # reference = "안녕하세요, 반갑 습니다!"
+    reference = "제가 스웨덴에서 왔고, 우리나라가 큰 나라이지만 인구가 좀 적어서 학생이라도 재밌게 할 수 있는게 많이 없고 카페나 술집이나 이런게 많이 없어서 그런 거 한국에 많이 있다고 들었고 그거 때문에 한국에 공부하러 왔어요."
     
+    audio_path = "../data/stt_test.wav"
+    hypothesis = transcribe_audio(audio_path)
+    print("wav2vec2 변환:", hypothesis)
     # 기본 설정(공백, 문장부호 제거)으로 CER 계산
     cer_result = calculate_korean_cer(reference, hypothesis)
     print(f"CER (기본 설정): {cer_result['cer']}")
@@ -149,4 +173,3 @@ if __name__ == "__main__":
     # 정확도(CRR) 계산
     crr_result = calculate_korean_crr(reference, hypothesis)
     print(f"정확도(CRR): {crr_result['crr']}")
-'''
