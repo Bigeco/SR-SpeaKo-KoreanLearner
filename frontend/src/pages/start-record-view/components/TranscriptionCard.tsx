@@ -44,11 +44,11 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   wrongRomanizations,
   correctRomanizations
 }) => {
-  // 예시: LLaMA3 결과를 props로 받는다고 가정하거나, 실제 결과를 받아오는 부분에 맞게 수정 필요
-  // 여기서는 예시로 하드코딩된 결과 사용
-  // 실제로는 props로 resultString을 받아서 사용하거나, 상위 컴포넌트에서 전달받아야 함
-  const llama3Result = '(phaak-chi)->(bal-ki)'; // TODO: 실제 결과로 교체
-  const romanization = parseLLaMA3RomanizationResult(llama3Result);
+  // 콘솔 출력 추가
+  console.log('transcribedText:', transcribedText);
+  console.log('correctedText:', correctedText);
+  console.log('wrongRomanizations:', wrongRomanizations);
+  console.log('correctRomanizations:', correctRomanizations);
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
