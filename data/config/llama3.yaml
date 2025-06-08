@@ -1,4 +1,5 @@
 huggingface_token: "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"
+openrouter_token: "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"
 
 model:
   id: "meta-llama/Llama-3.2-3B-Instruct"

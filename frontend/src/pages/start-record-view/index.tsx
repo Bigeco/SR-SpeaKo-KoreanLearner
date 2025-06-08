@@ -7,6 +7,7 @@ import { NavBar } from '../../components/layout/NavBar';
 import { ScoreDisplay } from './components/ScoreDisplay';
 import { SproutScore } from './components/SproutScore';
 import TranscriptionCard from './components/TranscriptionCard';
+import { getRomanizationAlignments } from '../../utils/romanizer_api';
 import './styles/start-record.css';
 
 // Web Speech API 타입 정의
@@ -76,6 +77,9 @@ const StartRecordView: React.FC = () => {
   // recordingState를 ref로 추적
   const recordingStateRef = useRef(recordingState);
   useEffect(() => { recordingStateRef.current = recordingState; }, [recordingState]);
+  
+  // 로마자 정렬 관련
+  const [romanizationAlignments, setRomanizationAlignments] = useState<{ wrong: string[], correct: string[] } | null>(null);
   
   // Web Speech API 지원 확인 및 권한 요청
   useEffect(() => {
@@ -485,6 +489,22 @@ const StartRecordView: React.FC = () => {
   // Add toggleHelp handler
   const toggleHelp = () => setShowHelp((prev) => !prev);
 
+  // recordingState가 completed가 되고, transcribedText와 correctedText가 모두 있을 때 로마자 정렬 호출
+  useEffect(() => {
+    if (
+      recordingState === 'completed' &&
+      transcribedText &&
+      correctedText
+    ) {
+      // 비동기 호출
+      getRomanizationAlignments(transcribedText, correctedText)
+        .then(setRomanizationAlignments)
+        .catch(() => setRomanizationAlignments(null));
+    } else {
+      setRomanizationAlignments(null);
+    }
+  }, [recordingState, transcribedText, correctedText]);
+
   return (
     <div className="start-record-container">
       {/* 헤더 */}
@@ -550,6 +570,8 @@ const StartRecordView: React.FC = () => {
             isPlaying={isPlaying}
             onPlayAudio={togglePlayback}
             renderHighlightedCorrections={renderHighlightedCorrections}
+            wrongRomanizations={romanizationAlignments?.wrong}
+            correctRomanizations={romanizationAlignments?.correct}
           />
           
           {/* 추가 안내 (idle 상태일 때) */}
