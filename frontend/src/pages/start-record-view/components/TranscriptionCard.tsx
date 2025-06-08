@@ -1,7 +1,7 @@
 import React from 'react';
 import { Volume2 } from 'lucide-react';
 import { AudioWaveform } from '../../../components/common/AudioWavefrom';
-import { parseLLaMA3RomanizationResult, getDiffRomanizations } from '../../../utils/romanizer_api';
+import { getDiffRomanizations } from '../../../utils/romanizer_api';
 
 interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
