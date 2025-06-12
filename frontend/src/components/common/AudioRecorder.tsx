@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface AudioRecorderProps {
-  onRecordingComplete?: (audioUrl: string) => void;
+  onRecordingComplete?: (audioUrl: string, audioBlob?: Blob) => void; // audioBlob 매개변수 추가
   autoDownload?: boolean;
   fileName?: string;
   children?: (props: {
@@ -9,6 +9,7 @@ interface AudioRecorderProps {
     startRecording: () => Promise<void>;
     stopRecording: () => void;
     audioUrl: string | null;
+    audioBlob: Blob | null; // audioBlob 추가
   }) => React.ReactNode;
 }
 
@@ -19,7 +20,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   children
 }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null); // Audio URL state 추가
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null); // audioBlob 상태 추가
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -33,23 +35,29 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       setMediaRecorder(recorder);
       audioChunksRef.current = [];
       setIsRecording(true);
+      
+      // 새 녹음 시작 시 이전 데이터 초기화
+      setAudioUrl(null);
+      setAudioBlob(null);
 
       recorder.ondataavailable = (event: BlobEvent) => {
         audioChunksRef.current.push(event.data);
       };
 
       recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        setAudioUrl(audioUrl); // 녹음이 완료되면 audioUrl을 상태로 업데이트
+        const newAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const newAudioUrl = URL.createObjectURL(newAudioBlob);
+        
+        setAudioUrl(newAudioUrl);
+        setAudioBlob(newAudioBlob); // audioBlob 상태 업데이트
 
         if (onRecordingComplete) {
-          onRecordingComplete(audioUrl);
+          onRecordingComplete(newAudioUrl, newAudioBlob); // audioBlob도 함께 전달
         }
 
         if (autoDownload) {
           const downloadLink = document.createElement('a');
-          downloadLink.href = audioUrl;
+          downloadLink.href = newAudioUrl;
           downloadLink.download = fileName;
           downloadLink.style.display = 'none';
           document.body.appendChild(downloadLink);
@@ -91,7 +99,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   return (
     <>
-      {children?.({ isRecording, startRecording, stopRecording, audioUrl })}
+      {children?.({ isRecording, startRecording, stopRecording, audioUrl, audioBlob })}
     </>
   );
 };

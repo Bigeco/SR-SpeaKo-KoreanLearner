@@ -8,6 +8,15 @@ import { ScoreDisplay } from './components/ScoreDisplay';
 import { SproutScore } from './components/SproutScore';
 import TranscriptionCard from './components/TranscriptionCard';
 import { getRomanizationAlignments } from '../../utils/romanizer_api';
+import { 
+  transcribeAudioWithWav2Vec2, 
+  checkWav2Vec2ServerHealth,
+  validateAudioFile,
+  validateAudioSize,
+  transcribeAudioWithSubmit,
+  downloadAudioForAnalysis,
+  analyzeAudioBlob
+} from '../../utils/wav2vec2_api';
 import './styles/start-record.css';
 
 // Web Speech API 타입 정의
@@ -49,16 +58,14 @@ const StartRecordView: React.FC = () => {
   const [showHelp, setShowHelp] = useState(false);
   
   // 전사 및 교정 텍스트
-  const [transcribedText, setTranscribedText] = useState<string>('');
-  const [correctedText, setCorrectedText] = useState<string>('');
-  const [interimText, setInterimText] = useState<string>(''); // 중간 결과용
+  const [transcribedText, setTranscribedText] = useState<string>(''); // Wav2Vec2 결과 (인식된 문장)
+  const [correctedText, setCorrectedText] = useState<string>('');     // Web Speech API 결과 (교정된 문장)
+  const [interimText, setInterimText] = useState<string>('');         // Web Speech API 중간 결과
   
   // 누적된 최종 텍스트 관리를 위한 새로운 상태
-  const [accumulatedFinalText, setAccumulatedFinalText] = useState<string>('');
-  
-  // accumulatedFinalText를 ref로도 추적하여 실시간 상태 확인
-  const accumulatedFinalTextRef = useRef('');
-  useEffect(() => { accumulatedFinalTextRef.current = accumulatedFinalText; }, [accumulatedFinalText]);
+  const [accumulatedWebSpeechText, setAccumulatedWebSpeechText] = useState<string>('');
+  const accumulatedWebSpeechTextRef = useRef('');
+  useEffect(() => { accumulatedWebSpeechTextRef.current = accumulatedWebSpeechText; }, [accumulatedWebSpeechText]);
   
   // 발음 정확도 - 녹음 완료 시에만 설정
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -73,7 +80,12 @@ const StartRecordView: React.FC = () => {
   
   // 오디오 요소 참조
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
   
+  // Wav2Vec2 서버 상태
+  const [wav2vec2ServerReady, setWav2vec2ServerReady] = useState<boolean>(false);
+  const [isProcessingWav2Vec2, setIsProcessingWav2Vec2] = useState<boolean>(false);
+
   // recordingState를 ref로 추적
   const recordingStateRef = useRef(recordingState);
   useEffect(() => { recordingStateRef.current = recordingState; }, [recordingState]);
@@ -95,6 +107,11 @@ const StartRecordView: React.FC = () => {
       setIsSupported(false);
       console.warn('Web Speech API가 지원되지 않는 브라우저입니다.');
     }
+  
+    // Wav2Vec2 서버 상태 확인
+    checkWav2Vec2ServerHealth()
+      .then(setWav2vec2ServerReady)
+      .catch(() => setWav2vec2ServerReady(false));
   }, []);
   
   // 마이크 권한 확인
@@ -152,17 +169,14 @@ const StartRecordView: React.FC = () => {
       
       // 최종 결과가 있을 때 누적 (녹음 중일 때만)
       if (finalTranscript && recordingStateRef.current === 'recording') {
-        console.log('최종 인식 텍스트:', `"${finalTranscript}"`);
+        console.log('Web Speech API 최종 텍스트 (교정된 문장):', `"${finalTranscript}"`);
         
         // 기존 누적 텍스트에 새로운 최종 텍스트 추가
-        setAccumulatedFinalText(prev => {
+        setAccumulatedWebSpeechText(prev => {
           const newAccumulated = prev ? `${prev} ${finalTranscript}`.trim() : finalTranscript;
-          console.log('누적된 최종 텍스트:', `"${newAccumulated}"`);
+          console.log('누적된 Web Speech API 텍스트:', `"${newAccumulated}"`);
           return newAccumulated;
         });
-        
-        // 고정된 교정 텍스트 사용
-        setCorrectedText(getFixedCorrectedText());
       }
       
       // 중간 결과 업데이트 (실시간 표시용, 녹음 중일 때만)
@@ -192,12 +206,6 @@ const StartRecordView: React.FC = () => {
         alert('마이크 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
       }
     };
-  };
-  
-  // 테스트용 고정 교정 문장
-  const getFixedCorrectedText = (): string => {
-    // 여기에 원하는 교정 문장을 입력하세요 (마침표 제거)
-    return "수학을 배우고 있어요";
   };
   
   // 페이지 이벤트 핸들러
@@ -319,6 +327,67 @@ const StartRecordView: React.FC = () => {
     return result;
   };
   
+  const processAudioWithWav2Vec2 = async (audioBlob: Blob) => {
+    console.log('🎤 Wav2Vec2 처리 시작:', { size: audioBlob.size, type: audioBlob.type });
+    
+    try {
+      setIsProcessingWav2Vec2(true);
+      
+      // 디버깅: 오디오 분석
+      await analyzeAudioBlob(audioBlob);
+      
+      // 디버깅: 파일 다운로드 (비교용)
+      await downloadAudioForAnalysis(audioBlob, 'app-recording.wav');
+      
+      // 파일 검증
+      if (!validateAudioFile(audioBlob)) {
+        throw new Error('지원되지 않는 오디오 형식입니다.');
+      }
+      
+      if (!validateAudioSize(audioBlob, 10)) {
+        throw new Error('오디오 파일이 너무 큽니다. (최대 10MB)');
+      }
+      
+      // 일반 API 방식 테스트
+      console.log('📱 앱 방식 (/transcribe) 테스트 중...');
+      const result = await transcribeAudioWithWav2Vec2(audioBlob, 'recording.wav');
+      
+      // 웹 UI 방식도 테스트 (비교용)
+      console.log('🌐 웹 UI 방식 (/submit) 테스트 중...');
+      try {
+        const webResult = await transcribeAudioWithSubmit(audioBlob, 'recording.wav');
+        console.log('🔄 결과 비교:', {
+          앱결과: result.transcription,
+          웹결과: webResult.transcription,
+          동일함: result.transcription === webResult.transcription
+        });
+      } catch (webError) {
+        console.warn('웹 UI 방식 테스트 실패:', webError);
+      }
+      
+      setTranscribedText(result.transcription);
+      return result.transcription;
+      
+    } catch (error) {
+      console.error('Wav2Vec2 처리 오류:', error);
+      
+      // 기존 fallback 로직...
+      const fallbackText = accumulatedWebSpeechTextRef.current || interimText;
+      if (fallbackText) {
+        console.log('Wav2Vec2 실패, Web Speech API 결과로 fallback:', fallbackText);
+        setTranscribedText(fallbackText);
+        return fallbackText;
+      } else {
+        const testText = "수학을 배오고 있어요";
+        console.log('완전 실패, 테스트 데이터 사용:', testText);
+        setTranscribedText(testText);
+        return testText;
+      }
+    } finally {
+      setIsProcessingWav2Vec2(false);
+    }
+  };
+
   // 틀린 음소 분석 (시뮬레이션 - 실제로는 AI가 분석)
   const analyzeIncorrectPhonemes = (original: string, corrected: string): string[] => {
     const incorrectPhonemes: string[] = [];
@@ -365,7 +434,7 @@ const StartRecordView: React.FC = () => {
       // 녹음 시작 - 모든 상태 초기화
       setRecordingState('recording');
       setTranscribedText('');
-      setAccumulatedFinalText(''); // 누적 텍스트도 초기화
+      setAccumulatedWebSpeechText('');
       setCorrectedText('');
       setInterimText('');
       setAccuracy(null);
@@ -385,46 +454,39 @@ const StartRecordView: React.FC = () => {
       recognitionRef.current?.stop();
       
       // 더 긴 지연으로 Web Speech API 최종 결과 대기
-      setTimeout(() => {
-        // ref에서 최신 상태 확인 (클로저 문제 방지)
-        const currentAccumulatedText = accumulatedFinalTextRef.current;
-        const currentInterimText = interimText;
+      setTimeout(async () => {
+        // Web Speech API 최종 결과를 교정된 문장으로 설정
+        const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
         
-        console.log('녹음 중지 후 최신 상태 확인:', { 
-          currentAccumulatedText: `"${currentAccumulatedText}"`,
-          currentInterimText: `"${currentInterimText}"`
-        });
+        console.log('녹음 중지 후 Web Speech API 결과 (교정된 문장):', `"${webSpeechResult}"`);
         
-        // 실제 인식된 텍스트 우선 사용, 없으면 중간 텍스트라도 사용
-        let finalText = currentAccumulatedText;
-        if (!finalText && currentInterimText) {
-          console.log('최종 텍스트가 없어 중간 텍스트 사용:', currentInterimText);
-          finalText = currentInterimText;
-        }
-        if (!finalText) {
-          console.log('인식된 텍스트가 없어 테스트용 fallback 사용');
-          finalText = "수학을 배오고 있어요"; // 테스트용 fallback
+        if (webSpeechResult) {
+          setCorrectedText(webSpeechResult);
         }
         
-        const correctionText = getFixedCorrectedText();
+        // Wav2Vec2로 최종 인식 처리 (녹음된 오디오 있는 경우)
+        if (recordedAudioBlob) {
+          console.log('녹음된 오디오로 Wav2Vec2 처리 시작');
+          const wav2vecResult = await processAudioWithWav2Vec2(recordedAudioBlob);
+          
+          // 정확도 계산 (Wav2Vec2 결과 vs Web Speech API 결과)
+          const finalCorrectedText = webSpeechResult || "수학을 배우고 있어요"; // fallback
+          const finalAccuracy = calculateAccuracy(wav2vecResult, finalCorrectedText);
+          
+          setAccuracy(finalAccuracy);
+          setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, finalCorrectedText));
+        } else {
+          console.warn('녹음된 오디오 없음, Wav2Vec2 처리 스킵');
+          
+          // Wav2Vec2 처리 없이 Web Speech API 결과만으로 처리
+          if (webSpeechResult) {
+            setTranscribedText(webSpeechResult); // 임시로 동일하게 설정
+            setAccuracy(100); // Web Speech API 결과가 정답이므로 100%
+          }
+        }
         
-        console.log('녹음 중지 - 최종 처리:', { 
-          stateAccumulatedText: `"${accumulatedFinalText}"`,
-          refAccumulatedText: `"${currentAccumulatedText}"`,
-          finalText: `"${finalText}"`
-        });
-        
-        // UI에 최종 텍스트 표시
-        setTranscribedText(finalText);
-        setCorrectedText(correctionText);
-        
-        // 정확도 계산 및 상태 업데이트
-        const finalAccuracy = calculateAccuracy(finalText, correctionText);
-        setAccuracy(finalAccuracy);
-        setIncorrectPhonemes(analyzeIncorrectPhonemes(finalText, correctionText));
-        // recordingState는 이미 'completed'로 설정됨
         setInterimText(''); // 중간 텍스트 제거
-      }, 1000); // 1초로 지연 시간 증가
+      }, 1000);
     }
   };
   
@@ -441,7 +503,7 @@ const StartRecordView: React.FC = () => {
   // 전사 결과에서 교정된 부분 하이라이트
   const renderHighlightedCorrections = () => {
     const originalText = transcribedText;
-    const correctionText = correctedText || getFixedCorrectedText();
+    const correctionText = correctedText;
     
     if (!originalText || !correctionText) return null;
     
@@ -478,7 +540,7 @@ const StartRecordView: React.FC = () => {
   const getCurrentDisplayText = () => {
     if (recordingState === 'recording') {
       // 녹음 중일 때: 누적된 최종 텍스트 + 현재 중간 텍스트
-      const baseText = accumulatedFinalText;
+      const baseText = accumulatedWebSpeechText;
       const currentText = interimText;
       return baseText && currentText ? `${baseText} ${currentText}` : (baseText || currentText);
     }
@@ -562,6 +624,19 @@ const StartRecordView: React.FC = () => {
             )}
           </div>
 
+          {/* Wav2Vec2 처리 중 알림 */}
+          {isProcessingWav2Vec2 && (
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 m-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700">
+                    🎤 Wav2Vec2로 음성을 분석하고 있습니다...
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 전사 결과 카드 */}
           <TranscriptionCard
             recordingState={recordingState}
@@ -582,6 +657,11 @@ const StartRecordView: React.FC = () => {
               {!isSupported && (
                 <p className="mt-2 text-red-600">
                   ⚠️ 현재 브라우저에서는 음성 인식이 지원되지 않습니다.
+                </p>
+              )}
+              {!wav2vec2ServerReady && (
+                <p className="mt-2 text-orange-600">
+                  ⚠️ Wav2Vec2 서버에 연결할 수 없어 Web Speech API만 사용됩니다.
                 </p>
               )}
             </div>
@@ -626,11 +706,13 @@ const StartRecordView: React.FC = () => {
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
         <AudioRecorder
-          onRecordingComplete={(audioUrl) => {
-            console.log('녹음된 오디오 URL:', audioUrl);
-            // handleRecordingToggle에서 이미 처리했으므로 중복 처리 방지
+          onRecordingComplete={(audioUrl, audioBlob) => {
+            console.log('녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
+            if (audioBlob) {
+              setRecordedAudioBlob(audioBlob);
+            }
           }}
-          autoDownload={true}
+          autoDownload={false} // 자동 다운로드 비활성화
           fileName="start-recording.wav"
         >
           {({ isRecording, startRecording, stopRecording }) => (
