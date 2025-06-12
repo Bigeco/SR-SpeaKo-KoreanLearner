@@ -3,6 +3,8 @@
  * and returns an object with wrong and correct romanizations.
  * @param result The result string from LLaMA3, e.g. "(phaak-chi)->(bal-ki)"
  */
+const LLAMA_SERVER_URL = 'https://speako-llama-server.hf.space';
+
 export function parseLLaMA3RomanizationResult(result: string): { wrong: string, correct: string } | null {
   const match = result.match(/^\(([^)]+)\)->\(([^)]+)\)$/);
   if (!match) return null;
@@ -40,7 +42,7 @@ export async function getRomanizationAlignments(
   // 3. llama3 API 호출 (HuggingFace Space 서버 사용)
   const results: { idx: number, wrong: string, correct: string }[] = await Promise.all(
     diffPairs.map(async ({ idx, user, correct }) => {
-      const response = await fetch('https://speako-llama-server.hf.space/generate', {
+      const response = await fetch(`${LLAMA_SERVER_URL}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
