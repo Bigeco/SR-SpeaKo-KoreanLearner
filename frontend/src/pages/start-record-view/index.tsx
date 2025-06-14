@@ -455,6 +455,8 @@ const StartRecordView: React.FC = () => {
       setInterimText('');
       setAccuracy(null);
       setIncorrectPhonemes([]);
+      setRecordedAudioBlob(null);
+      
       // Web Speech API 시작
       try {
         recognitionRef.current?.start();
