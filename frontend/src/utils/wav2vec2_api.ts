@@ -263,3 +263,12 @@ export function validateAudioSize(audioBlob: Blob, maxSizeMB: number = 10): bool
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   return audioBlob.size <= maxSizeBytes;
 }
+
+export async function sttCrrStep1(audio1: File, reference: string) {
+  const formData = new FormData();
+  formData.append('file', audio1);         // 백엔드 파라미터명과 맞춰야 함!
+  formData.append('reference', reference);
+  const res = await fetch('/transcribe', { method: 'POST', body: formData });
+  if (!res.ok) throw new Error('API 실패');
+  return res.json(); // { transcription, status, crr }
+}
