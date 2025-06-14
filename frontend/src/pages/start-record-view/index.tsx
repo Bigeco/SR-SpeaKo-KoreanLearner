@@ -220,13 +220,13 @@ const StartRecordView: React.FC = () => {
     });
   };
   
-  // 텍스트 정규화 함수 (구두점 제거 및 공백 정리)
-  const normalizeText = (text: string): string => {
-    return text
-      .replace(/[.,!?;:]/g, '') // 구두점 제거
-      .replace(/\s+/g, ' ')     // 연속 공백을 하나로
-      .trim();                  // 앞뒤 공백 제거 (toLowerCase 제거)
-  };
+  // // 텍스트 정규화 함수 (구두점 제거 및 공백 정리)
+  // const normalizeText = (text: string): string => {
+  //   return text
+  //     .replace(/[.,!?;:]/g, '') // 구두점 제거
+  //     .replace(/\s+/g, ' ')     // 연속 공백을 하나로
+  //     .trim();                  // 앞뒤 공백 제거 (toLowerCase 제거)
+  // };
   
   // 텍스트 전처리
   const preprocessText = (
