@@ -3,6 +3,7 @@ import { ReelsText } from './components/ReelsText';
 import { ReelsControls } from './components/ReelsControls';
 import './styles/reels.css';
 
+
 const WORDS = ['사과', '공룡', '안녕', '김치', '한국'];
 const SPRITE_IMAGES = [
   '/images/sprout/sprout_stage_1_seed.png',
@@ -12,6 +13,7 @@ const SPRITE_IMAGES = [
   '/images/sprout/sprout_stage_5_bud.png'
 ];
 
+
 const Index: React.FC = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -20,9 +22,11 @@ const Index: React.FC = () => {
   const [finished, setFinished] = useState(false);
   const [retryMessage, setRetryMessage] = useState('');
 
+
   const handleGameStart = () => {
     setGameStarted(true);
   };
+
 
   useEffect(() => {
   if ((cardState === 'moving' || cardState === 'moving-from-retry') &&
@@ -48,9 +52,11 @@ const Index: React.FC = () => {
       }
     }, 3000);
 
+
     return () => clearTimeout(timeout);
   }
 }, [cardState, isRecording, currentIndex]);
+
 
 // 여기서 handleStart 함수 선언 (useEffect 밖)
 const handleStart = () => {
@@ -66,6 +72,7 @@ const handleStart = () => {
     setRetryMessage('');
   }
 };
+
 
 if (!gameStarted) {
     return (
@@ -91,6 +98,8 @@ if (!gameStarted) {
       </div>
     );
   }
+
+
 
 
   return (
@@ -122,7 +131,7 @@ if (!gameStarted) {
           )}
           <div className="reels-ball">
             <img
-              src={SPRITE_IMAGES[currentIndex]} 
+              src={SPRITE_IMAGES[currentIndex]}
               style={{
                 width: '100%',
                 height: '100%',
@@ -134,7 +143,7 @@ if (!gameStarted) {
           <div
             className={`reels-card
               ${cardState === 'moving' ? 'card-slide' : ''}
-              ${cardState === 'moving-from-retry' ? 'card-retry-slide' : ''} 
+              ${cardState === 'moving-from-retry' ? 'card-retry-slide' : ''}
               ${cardState === 'failed' ? 'card-fail-shift' : ''}
               ${cardState === 'retrying' ? 'card-retry-shift' : ''}
               ${cardState === 'passed' ? 'card-pass' : ''}
@@ -167,5 +176,6 @@ if (!gameStarted) {
     </div>
   );
 };
+
 
 export default Index;

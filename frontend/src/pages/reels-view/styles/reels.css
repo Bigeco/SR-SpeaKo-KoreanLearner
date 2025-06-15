@@ -10,6 +10,7 @@
   transform: translate(-50%, -50%);
 }
 
+
 .reels-ball {
   width: 150px;
   height: 180px;
@@ -26,6 +27,7 @@
   color: white;
 }
 
+
 .reels-card {
   position: absolute;
   top: 50%;
@@ -41,11 +43,12 @@
   font-size: 2rem;
   font-weight: bold;
   transform: translate(-50%, -50%);
-  transition: left 0.5s cubic-bezier(0.4,0,0.2,1), 
+  transition: left 0.5s cubic-bezier(0.4,0,0.2,1),
               transform 0.5s cubic-bezier(0.4,0,0.2,1),
               opacity 0.5s;
   opacity: 0;
 }
+
 
 /* 카드가 중앙으로 슬라이드 인 */
 .card-slide {
@@ -58,6 +61,8 @@
 }
 
 
+
+
 /* 실패: 중앙(50%)에서 오른쪽(70%)으로 이동 */
 .card-fail-shift {
   left: 70%;
@@ -65,16 +70,19 @@
   /* transition 유지 */
 }
 
+
 /* 재도전 시작 위치 (70%) */
 .card-retry-shift {
   left: 70%;
   opacity: 1;
 }
 
+
 /* 70% → 50% 이동 애니메이션 */
 .card-retry-slide {
   animation: slideFromRetry 2s linear forwards;
 }
+
 
 @keyframes slideFromRetry {
   0% {
@@ -86,6 +94,8 @@
     opacity: 1;
   }
 }
+
+
 
 
 /* 통과: 왼쪽으로 사라짐 */
@@ -105,6 +115,7 @@
   }
 }
 
+
 .reels-congrats {
   position: absolute;
   top: 50%;
@@ -121,6 +132,7 @@
   overflow: hidden;
   text-overflow: ellipsis
 }
+
 
 .reels-grass-road {
   position: absolute;
@@ -139,6 +151,9 @@
 
 
 
+
+
+
 /* 시작 화면 스타일 */
 .reels-start-screen {
   position: absolute;
@@ -151,6 +166,7 @@
   text-overflow: ellipsis
 }
 
+
 .start-title {
   font-size: 1.8rem;
   font-weight: bold;
@@ -158,17 +174,20 @@
   margin-bottom: 12px;
 }
 
+
 .start-subtitle {
   font-size: 1.2rem;
   color: #66bb6a;
   margin-bottom: 16px;
 }
 
+
 .start-progress {
   font-size: 1rem;
   color: #777;
   margin-bottom: 32px;
 }
+
 
 .start-button {
   background: linear-gradient(135deg, #4caf50, #66bb6a);
@@ -183,10 +202,12 @@
   transition: all 0.3s ease;
 }
 
+
 .start-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
+
 
 .start-button:active {
   transform: translateY(0);
