@@ -11,7 +11,7 @@ export const OnboardingControls: React.FC = () => {
   return (
     <div className="onboarding-controls-buttons flex justify-center mt-2">
       <button
-        className="control-button bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        className="control-button"
         onClick={handleNext}
       >
         시작하기

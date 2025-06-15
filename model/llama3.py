@@ -1,8 +1,6 @@
 import yaml
 import argparse
-import torch
-import transformers
-import huggingface_hub
+from openai import OpenAI
 
 # TODO 1: 하이퍼파라미터 조정 필요. (실험 테스트 필요)
 # TODO 2: 결과가 ()->() 벗어날 경우를 대비해 처리 코드 작성 필요.
@@ -11,31 +9,38 @@ import huggingface_hub
 # TODO 5: 생성 결과 평가 지표 필요.	
 class LLaMA3:
     def __init__(self, config: str):
-        # 허깅페이스 로그인
-        huggingface_hub.login(config["huggingface_token"])
-
-        # 모델 설정 로드
-        self.model_config = config["model"]
-        self.generate_kwargs = config.get("generate", {}) 
-        self.prompt_template = config["prompt_template"]
-
-        # 모델 파이프라인 초기화
-        self.pipeline = transformers.pipeline(
-            "text-generation",
-            model=self.model_config["id"],
-            model_kwargs={
-                "torch_dtype": getattr(torch, self.model_config["torch_dtype"])
-            },
-            device=self.model_config["device"],
+        # OpenRouter API 클라이언트 초기화
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=config["openrouter_token"]
         )
+        
+        # 프롬프트 템플릿 설정
+        self.prompt_template = config["prompt_template"]
+        
+        # 모델 설정
+        self.model = config["model"]["id"]
 
     def generate(self, user_input: str, correct_input: str) -> str:
         prompt = self.prompt_template.format(
             user_input=user_input, correct_input=correct_input
         )
-        result = self.pipeline(prompt, **self.generate_kwargs)[0]["generated_text"]
-        return result
-    
+        
+        completion = self.client.chat.completions.create(
+            extra_headers={
+                "HTTP-Referer": "https://speako-kor.netlify.app/",
+                "X-Title": "SpeaKo Korean Learner",
+            },
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+        
+        return completion.choices[0].message.content
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="LLaMA3 pronunciation correction pipeline.")
