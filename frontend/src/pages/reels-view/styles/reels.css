@@ -1,15 +1,49 @@
-.reels-container {
-  position: relative;
-  width: 500px;
-  height: 700px;
-  background: linear-gradient(135deg, #f0f8ff, #ffffff);
-  overflow: hidden;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+@font-face {
+  font-family: 'ParkDahyun';
+  src: url('../../../assets/fonts/온글잎 박다현체.woff') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 
+.reels-outer-container, .reels-container {
+  font-family: 'ParkDahyun', sans-serif;
+  font-size: 20px !important;
+}
+
+.reels-outer-container {
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f0f8ff, #ffffff);
+}
+
+.reels-container {
+  width: 100%;
+  max-width: 500px;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  position: relative;
+  background: none;
+  box-shadow: none;
+}
+
+.reels-container.centered {
+  justify-content: center;
+}
+
+.reels-container.reels-onboarding-layout {
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
+  min-height: 100dvh;
+  height: 100dvh;
+}
 
 .reels-ball {
   width: 150px;
@@ -26,7 +60,6 @@
   font-size: 18px;
   color: white;
 }
-
 
 .reels-card {
   position: absolute;
@@ -49,7 +82,6 @@
   opacity: 0;
 }
 
-
 /* 카드가 중앙으로 슬라이드 인 */
 .card-slide {
   animation: slideToBall 3s linear forwards;
@@ -60,9 +92,6 @@
   100% { left: 50%; opacity: 1; }
 }
 
-
-
-
 /* 실패: 중앙(50%)에서 오른쪽(70%)으로 이동 */
 .card-fail-shift {
   left: 70%;
@@ -70,19 +99,16 @@
   /* transition 유지 */
 }
 
-
 /* 재도전 시작 위치 (70%) */
 .card-retry-shift {
   left: 70%;
   opacity: 1;
 }
 
-
 /* 70% → 50% 이동 애니메이션 */
 .card-retry-slide {
   animation: slideFromRetry 2s linear forwards;
 }
-
 
 @keyframes slideFromRetry {
   0% {
@@ -94,9 +120,6 @@
     opacity: 1;
   }
 }
-
-
-
 
 /* 통과: 왼쪽으로 사라짐 */
 .card-pass {
@@ -115,7 +138,6 @@
   }
 }
 
-
 .reels-congrats {
   position: absolute;
   top: 50%;
@@ -133,61 +155,68 @@
   text-overflow: ellipsis
 }
 
-
 .reels-grass-road {
-  position: absolute;
+  position: fixed;
   left: 0;
+  right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   height: 200px;
-  background: url('/images/sprout/grass.png') repeat-x center/auto 100%;
-  animation: grass-move 4s linear infinite;
-  z-index: 30;
+  background-size: 100vw 100%;
+  z-index: 10;
+  pointer-events: none;
 }
 @keyframes grass-move {
   0% { background-position-x: 0; }
   100% { background-position-x: -400px; }
 }
 
-
-
-
-
-
 /* 시작 화면 스타일 */
 .reels-start-screen {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  z-index: 20;white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 80px;
+  box-sizing: border-box;
 }
 
+.reels-start-texts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.start-title, .start-subtitle {
+  color: rgba(255,255,255,0.85) !important;
+  text-shadow: 0 0px 4px rgba(39, 116, 249, 0.15);
+}
 
 .start-title {
-  font-size: 1.8rem;
+  font-size: 3rem !important;
   font-weight: bold;
-  color: #2e7d32;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  margin-top: 0;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-subtitle {
-  font-size: 1.2rem;
-  color: #66bb6a;
-  margin-bottom: 16px;
+  font-size: 2rem !important;
+  margin-bottom: 8px;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-progress {
   font-size: 1rem;
   color: #777;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-button {
   background: linear-gradient(135deg, #4caf50, #66bb6a);
@@ -195,23 +224,136 @@
   border: none;
   border-radius: 50px;
   padding: 16px 32px;
-  font-size: 1.3rem;
+  font-size: 2rem !important;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+  margin: 0 auto;
+  display: block;
   transition: all 0.3s ease;
 }
-
 
 .start-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
-
 .start-button:active {
   transform: translateY(0);
 }
 
+.reels-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
 
+.reels-controls .progress {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-align: center;
+  width: 100%;
+}
 
+.reels-controls .mic-button {
+  margin: 0 auto;
+  display: block;
+}
+
+.reels-controls-top {
+  margin-top: 0;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.reels-onboarding-bg {
+  background-image: url('../../../assets/reels_start_ui.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.reels-start-bottom-btn {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 96px;
+  margin: 0 auto;
+  width: 140px;
+  display: block;
+}
+
+.reels-navbar-default-font {
+  font-family: sans-serif !important;
+  font-size: 1rem !important;
+}
+
+.reels-grass-animate-bg {
+  background-image: url('../../../assets/grass_ui.png');
+  background-size: auto;
+  background-repeat: repeat-x;
+  animation: grass-move-bg 24s linear infinite;
+}
+
+@keyframes grass-move-bg {
+  0% { background-position-x: 0; }
+  100% { background-position-x: -2625px; }
+}
+
+.reels-grass-paused-bg {
+  animation-play-state: paused !important;
+}
+
+.reels-controls-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 96px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
+.reels-controls-bottom .mic-button {
+  pointer-events: auto;
+}
+
+.reels-progress-top {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 20;
+}
+
+.reels-progress-badges {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  z-index: 20;
+}
+.progress-badge {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+  transform: scale(0.85);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.progress-badge.active {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 8px rgba(30,144,255,0.15));
+}
