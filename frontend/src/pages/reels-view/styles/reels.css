@@ -334,3 +334,26 @@
   justify-content: center;
   z-index: 20;
 }
+
+.reels-progress-badges {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  z-index: 20;
+}
+.progress-badge {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+  transform: scale(0.85);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.progress-badge.active {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 8px rgba(30,144,255,0.15));
+}

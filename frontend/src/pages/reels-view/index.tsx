@@ -9,8 +9,8 @@ const SPRITE_IMAGES = [
   '/images/sprout/sprout_stage_1_seed.png',
   '/images/sprout/sprout_stage_2_first_leaf.png',
   '/images/sprout/sprout_stage_3_two_leaves.png',
-  '/images/sprout/sprout_stage_4_stem_growth.png',
-  '/images/sprout/sprout_stage_5_bud.png'
+  '/images/sprout/sprout_stage_5_bud.png',
+  '/images/sprout/sprout_stage_6_flower_bloom.png'
 ];
 
 
@@ -116,10 +116,16 @@ if (!gameStarted) {
       <div className="reels-container">
         {!finished ? (
           <>
-            <div className="reels-progress-top">
-              <div className="progress">
-                {currentIndex + 1} / {WORDS.length}
-              </div>
+            {/* 진행상황 뱃지 이미지 (가로 일렬, 현재 단계만 강조) */}
+            <div className="reels-progress-badges">
+              {[1,2,3,4,5].map((n) => (
+                <img
+                  key={n}
+                  src={`/images/sprout/badge/complete_${n}.png`}
+                  alt={`progress badge ${n}`}
+                  className={`progress-badge${currentIndex + 1 === n ? ' active' : ''}`}
+                />
+              ))}
             </div>
             <div className="reels-grass-road" />
             {retryMessage && (
@@ -138,7 +144,7 @@ if (!gameStarted) {
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  textShadow: '0 0 6px #ff4d6d'
+                  textShadow: '0 0 6px rgba(255, 77, 110, 0.15)'
                 }}
               >
                 {retryMessage}
