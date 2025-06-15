@@ -19,7 +19,7 @@ export const NavBar: React.FC = () => {
   };
 
   return (
-    <div className="h-16 border-t border-gray-200 flex justify-around items-center bg-white">
+    <div className="h-16 border-t border-gray-200 flex justify-around items-center bg-white reels-navbar-default-font">
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.path);

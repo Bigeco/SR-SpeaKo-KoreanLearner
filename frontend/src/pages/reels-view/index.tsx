@@ -77,26 +77,18 @@ const handleStart = () => {
 
 if (!gameStarted) {
     return (
-      <div className="reels-outer-container">
-        <div className="reels-container centered">
+      <div className="reels-outer-container reels-onboarding-bg">
+        <div className="reels-container centered reels-onboarding-layout">
           <div className="reels-start-screen">
-            <img
-              src="/images/sprout/sprout_stage_6_flower_bloom.png"
-              style={{
-                width: '120px',
-                height: '120px',
-                objectFit: 'contain',
-                display: 'block',
-                margin: '0 auto 24px auto'
-              }}
-            />
-            <div className="start-title">🌱 한국어 발음 게임 🌱</div>
-            <div className="start-subtitle">꽃을 피워보세요!</div>
-            <div className="start-progress">1 / 5</div>
-            <button className="start-button" onClick={handleGameStart}>
-              시작
-            </button>
+            <div className="reels-start-texts">
+              <div className="start-title">한국어 발음 게임</div>
+              <div className="start-subtitle">꽃을 피워보세요!</div>
+              <div className="start-progress">1 / 5</div>
+            </div>
           </div>
+          <button className="start-button reels-start-bottom-btn" onClick={handleGameStart}>
+            시작
+          </button>
         </div>
         <div className="fixed bottom-0 left-0 right-0 w-full z-50">
           <NavBar />
