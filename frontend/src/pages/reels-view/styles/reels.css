@@ -1,15 +1,29 @@
-.reels-container {
-  position: relative;
-  width: 500px;
-  height: 700px;
+.reels-outer-container {
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   background: linear-gradient(135deg, #f0f8ff, #ffffff);
-  overflow: hidden;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
+.reels-container {
+  width: 100%;
+  max-width: 500px;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  position: relative;
+  background: none;
+  box-shadow: none;
+}
+
+.reels-container.centered {
+  justify-content: center;
+}
 
 .reels-ball {
   width: 150px;
@@ -26,7 +40,6 @@
   font-size: 18px;
   color: white;
 }
-
 
 .reels-card {
   position: absolute;
@@ -49,7 +62,6 @@
   opacity: 0;
 }
 
-
 /* 카드가 중앙으로 슬라이드 인 */
 .card-slide {
   animation: slideToBall 3s linear forwards;
@@ -60,9 +72,6 @@
   100% { left: 50%; opacity: 1; }
 }
 
-
-
-
 /* 실패: 중앙(50%)에서 오른쪽(70%)으로 이동 */
 .card-fail-shift {
   left: 70%;
@@ -70,19 +79,16 @@
   /* transition 유지 */
 }
 
-
 /* 재도전 시작 위치 (70%) */
 .card-retry-shift {
   left: 70%;
   opacity: 1;
 }
 
-
 /* 70% → 50% 이동 애니메이션 */
 .card-retry-slide {
   animation: slideFromRetry 2s linear forwards;
 }
-
 
 @keyframes slideFromRetry {
   0% {
@@ -94,9 +100,6 @@
     opacity: 1;
   }
 }
-
-
-
 
 /* 통과: 왼쪽으로 사라짐 */
 .card-pass {
@@ -115,7 +118,6 @@
   }
 }
 
-
 .reels-congrats {
   position: absolute;
   top: 50%;
@@ -133,61 +135,64 @@
   text-overflow: ellipsis
 }
 
-
 .reels-grass-road {
-  position: absolute;
+  position: fixed;
   left: 0;
+  right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   height: 200px;
-  background: url('/images/sprout/grass.png') repeat-x center/auto 100%;
-  animation: grass-move 4s linear infinite;
-  z-index: 30;
+  background: url('/images/sprout/grass.png') no-repeat left bottom;
+  background-size: 100vw 100%;
+  z-index: 10;
+  pointer-events: none;
 }
 @keyframes grass-move {
   0% { background-position-x: 0; }
   100% { background-position-x: -400px; }
 }
 
-
-
-
-
-
 /* 시작 화면 스타일 */
 .reels-start-screen {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 48px;
   text-align: center;
-  z-index: 20;white-space: nowrap;
+  z-index: 20;
+  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis
+  text-overflow: ellipsis;
+  width: 100%;
+  gap: 12px;
 }
-
 
 .start-title {
   font-size: 1.8rem;
   font-weight: bold;
   color: #2e7d32;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  margin-top: 0;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-subtitle {
   font-size: 1.2rem;
   color: #66bb6a;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-progress {
   font-size: 1rem;
   color: #777;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  width: 100%;
+  text-align: center;
 }
-
 
 .start-button {
   background: linear-gradient(135deg, #4caf50, #66bb6a);
@@ -198,19 +203,50 @@
   font-size: 1.3rem;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+  margin: 0 auto;
+  display: block;
   transition: all 0.3s ease;
 }
-
 
 .start-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
-
 .start-button:active {
   transform: translateY(0);
+}
+
+.reels-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.reels-controls .progress {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+.reels-controls .mic-button {
+  margin: 0 auto;
+  display: block;
+}
+
+.reels-controls-top {
+  margin-top: 0;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 

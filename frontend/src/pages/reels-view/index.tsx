@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ReelsText } from './components/ReelsText';
 import { ReelsControls } from './components/ReelsControls';
+import { NavBar } from '../../components/layout/NavBar';
 import './styles/reels.css';
 
 
@@ -76,103 +77,113 @@ const handleStart = () => {
 
 if (!gameStarted) {
     return (
-      <div className="reels-container">
-        <div className="reels-start-screen">
-          <img
-            src="/images/sprout/sprout_stage_6_flower_bloom.png"
-            style={{
-              width: '120px',
-              height: '120px',
-              objectFit: 'contain',
-              display: 'block',
-              margin: '0 auto 24px auto'
-            }}
-          />
-          <div className="start-title">🌱 한국어 발음 게임 🌱</div>
-          <div className="start-subtitle">꽃을 피워보세요!</div>
-          <div className="start-progress">1 / 5</div>
-          <button className="start-button" onClick={handleGameStart}>
-            시작
-          </button>
+      <div className="reels-outer-container">
+        <div className="reels-container centered">
+          <div className="reels-start-screen">
+            <img
+              src="/images/sprout/sprout_stage_6_flower_bloom.png"
+              style={{
+                width: '120px',
+                height: '120px',
+                objectFit: 'contain',
+                display: 'block',
+                margin: '0 auto 24px auto'
+              }}
+            />
+            <div className="start-title">🌱 한국어 발음 게임 🌱</div>
+            <div className="start-subtitle">꽃을 피워보세요!</div>
+            <div className="start-progress">1 / 5</div>
+            <button className="start-button" onClick={handleGameStart}>
+              시작
+            </button>
+          </div>
+        </div>
+        <div className="fixed bottom-0 left-0 right-0 w-full z-50">
+          <NavBar />
         </div>
       </div>
     );
   }
-
-
-
-
+  
   return (
-    <div className="reels-container">
-      {!finished ? (
-        <>
-          <div className="reels-grass-road" />
-          {retryMessage && (
-            <div
-              className="retry-message"
-              style={{
-                position: 'absolute',
-                top: '20%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                color: '#ff4d6d',
-                fontWeight: 'bold',
-                fontSize: '1.2rem',
-                zIndex: 15,
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                textShadow: '0 0 6px #ff4d6d'
-              }}
-            >
-              {retryMessage}
+    <div className="reels-outer-container">
+      <div className="reels-container">
+        {!finished ? (
+          <>
+            <div className="reels-controls-top">
+              <ReelsControls
+                currentIndex={currentIndex}
+                totalWords={WORDS.length}
+                isRecording={isRecording}
+                onMicClick={handleStart}
+              />
             </div>
-          )}
-          <div className="reels-ball">
+            <div className="reels-grass-road" />
+            {retryMessage && (
+              <div
+                className="retry-message"
+                style={{
+                  position: 'absolute',
+                  top: '20%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  color: '#ff4d6d',
+                  fontWeight: 'bold',
+                  fontSize: '1.2rem',
+                  zIndex: 15,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  textShadow: '0 0 6px #ff4d6d'
+                }}
+              >
+                {retryMessage}
+              </div>
+            )}
+            <div className="reels-ball">
+              <img
+                src={SPRITE_IMAGES[currentIndex]}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  display: 'block'
+                }}
+              />
+            </div>
+            <div
+              className={`reels-card
+                ${cardState === 'moving' ? 'card-slide' : ''}
+                ${cardState === 'moving-from-retry' ? 'card-retry-slide' : ''}
+                ${cardState === 'failed' ? 'card-fail-shift' : ''}
+                ${cardState === 'retrying' ? 'card-retry-shift' : ''}
+                ${cardState === 'passed' ? 'card-pass' : ''}
+              `}
+            >
+              <ReelsText word={WORDS[currentIndex]} />
+            </div>
+          </>
+        ) : (
+          <div className="reels-congrats">
             <img
-              src={SPRITE_IMAGES[currentIndex]}
+              src="/images/sprout/sprout_stage_6_flower_bloom.png"
               style={{
-                width: '100%',
-                height: '100%',
+                width: '120px',
+                height: '120px',
                 objectFit: 'contain',
-                display: 'block'
+                display: 'block',
+                margin: '0 auto 24px auto'
               }}
             />
+            🎉 축하합니다! 🎉
           </div>
-          <div
-            className={`reels-card
-              ${cardState === 'moving' ? 'card-slide' : ''}
-              ${cardState === 'moving-from-retry' ? 'card-retry-slide' : ''}
-              ${cardState === 'failed' ? 'card-fail-shift' : ''}
-              ${cardState === 'retrying' ? 'card-retry-shift' : ''}
-              ${cardState === 'passed' ? 'card-pass' : ''}
-            `}
-          >
-            <ReelsText word={WORDS[currentIndex]} />
-          </div>
-          <ReelsControls
-            currentIndex={currentIndex}
-            totalWords={WORDS.length}
-            isRecording={isRecording}
-            onMicClick={handleStart}
-          />
-        </>
-      ) : (
-        <div className="reels-congrats">
-          <img
-            src="/images/sprout/sprout_stage_6_flower_bloom.png"
-            style={{
-              width: '120px',
-              height: '120px',
-              objectFit: 'contain',
-              display: 'block',
-              margin: '0 auto 24px auto'
-            }}
-          />
-          🎉 축하합니다! 🎉
-        </div>
-      )}
+        )}
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50">
+        <NavBar />
+      </div>
+      <div className="reels-grass-road" />
     </div>
   );
 };

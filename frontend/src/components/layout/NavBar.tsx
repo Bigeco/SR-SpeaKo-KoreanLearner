@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mic, Video, BarChart, Home } from 'lucide-react';
+import { Mic, Video, Home } from 'lucide-react';
 
 export const NavBar: React.FC = () => {
   const navigate = useNavigate();
@@ -11,7 +11,6 @@ export const NavBar: React.FC = () => {
     { path: '/', icon: Home, label: '홈' }, 
     { path: '/start-record', icon: Mic, label: '녹음' },
     { path: '/reels', icon: Video, label: '릴스' },
-    { path: '/progress', icon: BarChart, label: '진행도' }, // 임시?
   ];
 
   // Check if a path is active
