@@ -1,20 +1,244 @@
+/* 구강 구조 페이지 스타일 */
 .oral-structure-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  background-color: white;
+}
+
+/* 음소 카드 트랜지션 */
+.phoneme-card {
+  transition: all 0.3s ease;
+}
+
+.phoneme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 입모양 이미지 컨테이너 */
+.mouth-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f8fafc, #e2e8f0);
   padding: 20px;
 }
 
-.oral-structure-content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.mouth-image {
+  transition: transform 0.3s ease;
 }
 
-.oral-structure-controls {
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-} 
+.mouth-image:hover {
+  transform: scale(1.05);
+}
+
+/* 진행률 바 애니메이션 */
+@keyframes progress-fill {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+.progress-bar-fill {
+  animation: progress-fill 0.8s ease-out;
+}
+
+/* 탭 활성화 애니메이션 */
+.tab-button {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+  border-radius: 1px 1px 0 0;
+}
+
+/* 음소 표시 애니메이션 */
+@keyframes phoneme-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.phoneme-display {
+  animation: phoneme-appear 0.5s ease-out;
+}
+
+/* 설명 텍스트 페이드인 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.description-content {
+  animation: fade-in-up 0.6s ease-out 0.2s both;
+}
+
+/* 팁 리스트 애니메이션 */
+.tip-item {
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: slide-in-left 0.4s ease-out forwards;
+}
+
+.tip-item:nth-child(1) { animation-delay: 0.3s; }
+.tip-item:nth-child(2) { animation-delay: 0.4s; }
+.tip-item:nth-child(3) { animation-delay: 0.5s; }
+
+@keyframes slide-in-left {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 네비게이션 버튼 호버 효과 */
+.nav-button {
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.nav-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 발음 듣기 버튼 */
+.audio-button {
+  transition: all 0.2s ease;
+}
+
+.audio-button:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  transform: scale(1.05);
+}
+
+.audio-button:active {
+  transform: scale(0.98);
+}
+
+/* 그라데이션 헤더 */
+.phoneme-header {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  position: relative;
+}
+
+.phoneme-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+/* 카드 그림자 효과 */
+.content-card {
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 10px 15px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: 
+    0 10px 15px rgba(0, 0, 0, 0.1),
+    0 20px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 로딩 스켈레톤 (이미지 로딩 중) */
+.image-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 탭 전환 애니메이션 */
+.tab-content {
+  opacity: 0;
+  transform: translateX(20px);
+  animation: tab-slide-in 0.3s ease-out forwards;
+}
+
+@keyframes tab-slide-in {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 640px) {
+  .mouth-image-container {
+    padding: 16px;
+  }
+  
+  .phoneme-display {
+    font-size: 3rem;
+  }
+  
+  .nav-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+/* 접근성을 위한 포커스 스타일 */
+.nav-button:focus,
+.audio-button:focus,
+.tab-button:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* 다크모드 대응 (필요시) */
+@media (prefers-color-scheme: dark) {
+  .content-card {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .mouth-image-container {
+    background: linear-gradient(145deg, #374151, #1f2937);
+  }
+}

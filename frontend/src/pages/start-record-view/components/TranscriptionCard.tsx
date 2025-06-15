@@ -1,6 +1,7 @@
 import React from 'react';
 import { Volume2 } from 'lucide-react';
 import { AudioWaveform } from '../../../components/common/AudioWavefrom';
+import { getDiffRomanizations } from '../../../utils/romanizer_api';
 
 interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
@@ -9,6 +10,8 @@ interface TranscriptionCardProps {
   isPlaying: boolean;
   onPlayAudio: () => void;
   renderHighlightedCorrections: () => React.ReactNode;
+  wrongRomanizations?: string[];
+  correctRomanizations?: string[];
 }
 
 // Add a helper function for character-level diff highlighting
@@ -37,8 +40,16 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   transcribedText,
   correctedText,
   isPlaying,
-  onPlayAudio
+  onPlayAudio,
+  wrongRomanizations,
+  correctRomanizations
 }) => {
+  // 콘솔 출력 추가
+  console.log('transcribedText:', transcribedText);
+  console.log('correctedText:', correctedText);
+  console.log('wrongRomanizations:', wrongRomanizations);
+  console.log('correctRomanizations:', correctRomanizations);
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
       {/* 원본 전사 텍스트 */}
@@ -52,26 +63,47 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             />
           </div>
         </div>
-        <p className="text-gray-800 text-lg">
+        <div className="flex justify-center gap-2">
           {(() => {
             if (recordingState !== 'completed' || !transcribedText || !correctedText) {
-              return transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...');
+              return <p className="text-gray-800 text-lg">{transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...')}</p>;
             }
             const transcribedWords = transcribedText.split(' ');
             const correctedWords = correctedText.split(' ');
             return transcribedWords.map((word, idx) => {
-              const isChanged = word !== correctedWords[idx];
-              if (isChanged) {
+              const correctedWord = correctedWords[idx] || '';
+              if (word !== correctedWord && wrongRomanizations && wrongRomanizations[idx]) {
+                // 음절 단위로 분리
+                const userSylls = word.split('');
+                const correctSylls = correctedWord.split('');
+                const romanSylls = wrongRomanizations[idx].split('-');
+                const diffRomans = getDiffRomanizations(userSylls, correctSylls, romanSylls);
+                const diffSpans = highlightDiffChars(word, correctedWord, 'transcribed');
                 return (
-                  <span key={idx} className="mr-1">
-                    {highlightDiffChars(word, correctedWords[idx] || '', 'transcribed')}
-                  </span>
+                  <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
+                    <div className="flex">
+                      {diffSpans.map((syllSpan, sidx) => (
+                        <div key={sidx} className="flex flex-col items-center">
+                          <span className="text-lg">{syllSpan}</span>
+                          {diffRomans[sidx] && (
+                            <span className="text-xs text-red-500 font-semibold mt-0.5">{diffRomans[sidx]}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              } else {
+                // unchanged word
+                return (
+                  <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
+                    <span className="text-gray-800 text-lg">{word}</span>
+                  </div>
                 );
               }
-              return <span key={idx} className="mr-1">{word}</span>;
             });
           })()}
-        </p>
+        </div>
       </div>
       {/* 교정된 텍스트 (completed 상태일 때만 표시) */}
       {recordingState === 'completed' && correctedText && (
@@ -85,23 +117,44 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
               />
             </div>
           </div>
-          <p className="text-gray-800 text-lg">
+          <div className="flex justify-center gap-2">
             {(() => {
               const transcribedWords = transcribedText.split(' ');
               const correctedWords = correctedText.split(' ');
               return correctedWords.map((word, idx) => {
-                const isChanged = word !== transcribedWords[idx];
-                if (isChanged) {
+                const transcribedWord = transcribedWords[idx] || '';
+                if (word !== transcribedWord && correctRomanizations && correctRomanizations[idx]) {
+                  // 음절 단위로 분리
+                  const userSylls = transcribedWord.split('');
+                  const correctSylls = word.split('');
+                  const romanSylls = correctRomanizations[idx].split('-');
+                  const diffRomans = getDiffRomanizations(correctSylls, userSylls, romanSylls);
+                  const diffSpans = highlightDiffChars(transcribedWord, word, 'corrected');
                   return (
-                    <span key={idx} className="mr-1">
-                      {highlightDiffChars(transcribedWords[idx] || '', word, 'corrected')}
-                    </span>
+                    <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
+                      <div className="flex">
+                        {diffSpans.map((syllSpan, sidx) => (
+                          <div key={sidx} className="flex flex-col items-center">
+                            <span className="text-lg">{syllSpan}</span>
+                            {diffRomans[sidx] && (
+                              <span className="text-xs text-green-600 font-semibold mt-0.5">{diffRomans[sidx]}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // unchanged word
+                  return (
+                    <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
+                      <span className="text-gray-800 text-lg">{word}</span>
+                    </div>
                   );
                 }
-                return <span key={idx} className="mr-1">{word}</span>;
               });
             })()}
-          </p>
+          </div>
           <div className="mt-2">
             <button 
               onClick={onPlayAudio}
