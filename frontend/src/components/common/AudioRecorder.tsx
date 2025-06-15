@@ -70,6 +70,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         }
 
         setIsRecording(false);
+        console.log(newAudioBlob.type);
       };
 
       recorder.start();

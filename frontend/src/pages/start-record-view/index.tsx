@@ -467,9 +467,7 @@ const StartRecordView: React.FC = () => {
         // Wav2Vec2로 최종 인식 처리 (녹음된 오디오 있는 경우)
         if (recordedAudioBlob) {
           console.log('녹음된 오디오로 Wav2Vec2 처리 시작');
-          const wav2vecResult = await processAudioWithWav2Vec2(recordedAudioBlob);
-          
-          // 정확도 계산 (Wav2Vec2 결과 vs Web Speech API 결과)
+          const wav2vecResult = transcribedText; // 이미 setTranscribedText로 저장됨
           const finalCorrectedText = webSpeechResult || "수학을 배우고 있어요"; // fallback
           const finalAccuracy = calculateAccuracy(wav2vecResult, finalCorrectedText);
           
@@ -706,13 +704,15 @@ const StartRecordView: React.FC = () => {
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
         <AudioRecorder
-          onRecordingComplete={(audioUrl, audioBlob) => {
+          onRecordingComplete={async (audioUrl, audioBlob) => {
             console.log('녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
             if (audioBlob) {
               setRecordedAudioBlob(audioBlob);
+              // 녹음이 끝난 최신 Blob을 바로 처리
+              await processAudioWithWav2Vec2(audioBlob);
             }
           }}
-          autoDownload={false} // 자동 다운로드 비활성화
+          autoDownload={false}
           fileName="start-recording.wav"
         >
           {({ isRecording, startRecording, stopRecording }) => (
