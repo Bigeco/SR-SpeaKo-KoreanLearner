@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ReelsText } from './components/ReelsText';
-import { ReelsControls } from './components/ReelsControls';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/reels.css';
 
@@ -22,6 +21,7 @@ const Index: React.FC = () => {
   const [cardState, setCardState] = useState<'idle' | 'moving' | 'failed' | 'passed' | 'retrying' | 'moving-from-retry'>('idle');
   const [finished, setFinished] = useState(false);
   const [retryMessage, setRetryMessage] = useState('');
+  const [isBackgroundMoving, setIsBackgroundMoving] = useState(false);
 
 
   const handleGameStart = () => {
@@ -62,17 +62,31 @@ const Index: React.FC = () => {
 // 여기서 handleStart 함수 선언 (useEffect 밖)
 const handleStart = () => {
   if (cardState === 'failed') {
-    setCardState('retrying'); // 1. 카드를 60% → 50%로 이동
+    setCardState('retrying');
+    setIsBackgroundMoving(true);
   } else if (cardState === 'retrying') {
-    setCardState('moving-from-retry'); // 2. 60%에서 시작하는 새로운 상태 추가
+    setCardState('moving-from-retry');
     setIsRecording(true);
     setRetryMessage('');
+    setIsBackgroundMoving(true);
   } else if (cardState === 'idle') {
     setCardState('moving');
     setIsRecording(true);
     setRetryMessage('');
+    setIsBackgroundMoving(true);
   }
 };
+
+// 실패 메시지(retryMessage) 표시 시 배경 멈춤
+useEffect(() => {
+  if (retryMessage) setIsBackgroundMoving(false);
+}, [retryMessage]);
+
+
+// 게임 시작 시 배경은 멈춤 상태로 초기화
+useEffect(() => {
+  if (gameStarted) setIsBackgroundMoving(false);
+}, [gameStarted]);
 
 
 if (!gameStarted) {
@@ -98,17 +112,14 @@ if (!gameStarted) {
   }
   
   return (
-    <div className="reels-outer-container">
+    <div className={`reels-outer-container${gameStarted ? ' reels-grass-animate-bg' : ''}${gameStarted && !isBackgroundMoving ? ' reels-grass-paused-bg' : ''}${!gameStarted ? ' reels-onboarding-bg' : ''}`}>
       <div className="reels-container">
         {!finished ? (
           <>
-            <div className="reels-controls-top">
-              <ReelsControls
-                currentIndex={currentIndex}
-                totalWords={WORDS.length}
-                isRecording={isRecording}
-                onMicClick={handleStart}
-              />
+            <div className="reels-progress-top">
+              <div className="progress">
+                {currentIndex + 1} / {WORDS.length}
+              </div>
             </div>
             <div className="reels-grass-road" />
             {retryMessage && (
@@ -154,6 +165,15 @@ if (!gameStarted) {
               `}
             >
               <ReelsText word={WORDS[currentIndex]} />
+            </div>
+            <div className="reels-controls-bottom">
+              <button 
+                className={`mic-button${isRecording ? ' recording' : ''}`}
+                onClick={handleStart}
+                disabled={isRecording}
+              >
+                {isRecording ? '녹음 중...' : '🎤 시작'}
+              </button>
             </div>
           </>
         ) : (

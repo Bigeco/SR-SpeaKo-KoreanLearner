@@ -162,7 +162,6 @@
   bottom: 0;
   width: 100vw;
   height: 200px;
-  background: url('/images/sprout/grass.png') no-repeat left bottom;
   background-size: 100vw 100%;
   z-index: 10;
   pointer-events: none;
@@ -293,4 +292,45 @@
 .reels-navbar-default-font {
   font-family: sans-serif !important;
   font-size: 1rem !important;
+}
+
+.reels-grass-animate-bg {
+  background-image: url('../../../assets/grass_ui.png');
+  background-size: auto;
+  background-repeat: repeat-x;
+  animation: grass-move-bg 24s linear infinite;
+}
+
+@keyframes grass-move-bg {
+  0% { background-position-x: 0; }
+  100% { background-position-x: -2625px; }
+}
+
+.reels-grass-paused-bg {
+  animation-play-state: paused !important;
+}
+
+.reels-controls-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 96px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
+.reels-controls-bottom .mic-button {
+  pointer-events: auto;
+}
+
+.reels-progress-top {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 20;
 }
