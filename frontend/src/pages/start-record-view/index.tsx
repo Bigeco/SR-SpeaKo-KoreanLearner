@@ -220,128 +220,112 @@ const StartRecordView: React.FC = () => {
     });
   };
   
-  // // 텍스트 정규화 함수 (구두점 제거 및 공백 정리)
-  // const normalizeText = (text: string): string => {
-  //   return text
-  //     .replace(/[.,!?;:]/g, '') // 구두점 제거
-  //     .replace(/\s+/g, ' ')     // 연속 공백을 하나로
-  //     .trim();                  // 앞뒤 공백 제거 (toLowerCase 제거)
-  // };
+  // 텍스트 정규화 함수 (구두점 제거 및 공백 정리)
+  const normalizeText = (text: string): string => {
+    return text
+      .replace(/[.,!?;:]/g, '') // 구두점 제거
+      .replace(/\s+/g, ' ')     // 연속 공백을 하나로
+      .trim();                  // 앞뒤 공백 제거 (toLowerCase 제거)
+  };
   
-  // 텍스트 전처리
-  const preprocessText = (
-    text: string,
-    removeSpaces = true,
-    removePunctuation = true
-  ): string => {
-    if (removePunctuation) {
-      text = text.replace(/[^\w\sㄱ-ㅎ가-힣]/g, ''); // 문장부호 제거
-    }
-    if (removeSpaces) {
-      text = text.replace(/\s+/g, '');
-    }
-    return text;
-  };
-
-  // 레벤슈타인 거리 계산
-  const calculateLevenshtein = (
-    u: string[],
-    v: string[]
-  ): { distance: number; substitutions: number; deletions: number; insertions: number } => {
-    const prev: number[] = Array(v.length + 1)
-      .fill(0)
-      .map((_, i) => i);
-    const prevOps: [number, number, number][] = Array(v.length + 1)
-      .fill(0)
-      .map((_, i) => [0, 0, i]);
-
-    let curr: number[] = [];
-    let currOps: [number, number, number][] = [];
-
-    for (let x = 1; x <= u.length; x++) {
-      curr = [x, ...Array(v.length).fill(0)];
-      currOps = [[0, x, 0], ...Array(v.length).fill([0, 0, 0])];
-
-      for (let y = 1; y <= v.length; y++) {
-        const delCost = prev[y] + 1;
-        const addCost = curr[y - 1] + 1;
-        const subCost = prev[y - 1] + (u[x - 1] !== v[y - 1] ? 1 : 0);
-
-        curr[y] = Math.min(subCost, delCost, addCost);
-
-        if (curr[y] === subCost) {
-          const [s, d, i] = prevOps[y - 1];
-          currOps[y] = [s + (u[x - 1] !== v[y - 1] ? 1 : 0), d, i];
-        } else if (curr[y] === delCost) {
-          const [s, d, i] = prevOps[y];
-          currOps[y] = [s, d + 1, i];
-        } else {
-          const [s, d, i] = currOps[y - 1];
-          currOps[y] = [s, d, i + 1];
-        }
-      }
-
-      for (let i = 0; i < curr.length; i++) {
-        prev[i] = curr[i];
-        prevOps[i] = currOps[i];
-      }
-    }
-
-    const [substitutions, deletions, insertions] = currOps[v.length];
-    return {
-      distance: curr[v.length],
-      substitutions,
-      deletions,
-      insertions
-    };
-  };
-
-  // 정확도(CRR) 계산 함수
-  const calculateAccuracy = (
-    original: string,
-    corrected: string,
-    removeSpaces = true,
-    removePunctuation = true
-  ): number => {
-    console.log('=== 정확도(CRR) 계산 시작 ===');
-    console.log('원본:', original);
-    console.log('교정:', corrected);
-
-    if (!original || !corrected || original.trim() === '' || corrected.trim() === '') {
-      console.log('❌ 입력이 비어 있음');
-      return 0;
-    }
-
-    const ref = preprocessText(original, removeSpaces, removePunctuation);
-    const hyp = preprocessText(corrected, removeSpaces, removePunctuation);
-
-    if (!ref || !hyp) {
-      console.log('❌ 정규화 후 비어 있음');
-      return 0;
-    }
-
-    const refChars = ref.split('');
-    const hypChars = hyp.split('');
-
-    const { substitutions, deletions, insertions } = calculateLevenshtein(hypChars, refChars);
-
-    const hits = refChars.length - (substitutions + deletions);
-    const total = substitutions + deletions + insertions + hits;
-
-    const cer = total > 0 ? (substitutions + deletions + insertions) / total : 0;
-    const crr = Math.max(0, Math.min(1 - cer, 1));
-
-    const finalResult = Math.round(crr * 1000) / 10; // 소수점 1자리까지 (%)
-    console.log('📊 결과:', {
-      substitutions,
-      deletions,
-      insertions,
-      crr: `${finalResult}%`
+  // 발음 정확도 계산
+  const calculateAccuracy = (original: string, corrected: string): number => {
+    console.log('=== 정확도 계산 시작 ===');
+    console.log('원본 입력:', { 
+      original: `"${original}"`, 
+      corrected: `"${corrected}"`,
+      originalType: typeof original,
+      correctedType: typeof corrected
     });
-
-    return finalResult;
+    
+    // null, undefined, 빈 문자열 체크
+    if (!original || !corrected || original.trim() === '' || corrected.trim() === '') {
+      console.log('❌ 빈 텍스트 또는 null/undefined로 인한 0% 반환');
+      return 0;
+    }
+    
+    // 텍스트 정규화
+    const normalizedOriginal = normalizeText(original);
+    const normalizedCorrected = normalizeText(corrected);
+    
+    console.log('정규화 후:', { 
+      normalizedOriginal: `"${normalizedOriginal}"`, 
+      normalizedCorrected: `"${normalizedCorrected}"`
+    });
+    
+    // 정규화 후 빈 문자열 체크
+    if (!normalizedOriginal || !normalizedCorrected || 
+        normalizedOriginal.trim() === '' || normalizedCorrected.trim() === '') {
+      console.log('❌ 정규화 후 빈 텍스트로 인한 0% 반환');
+      return 0;
+    }
+    
+    // 완전히 동일한 경우만 100%
+    if (normalizedOriginal === normalizedCorrected) {
+      console.log('✅ 완전히 동일한 텍스트 → 100% 반환');
+      return 100.0;
+    }
+    
+    // 단어 분리
+    const originalWords = normalizedOriginal.split(/\s+/).filter(word => word.length > 0);
+    const correctedWords = normalizedCorrected.split(/\s+/).filter(word => word.length > 0);
+    
+    console.log('단어 분리 후:', { 
+      originalWords, 
+      correctedWords,
+      originalLength: originalWords.length,
+      correctedLength: correctedWords.length
+    });
+    
+    const maxLength = Math.max(originalWords.length, correctedWords.length);
+    
+    if (maxLength === 0) {
+      console.log('❌ 단어가 없어서 0% 반환');
+      return 0;
+    }
+    
+    let matchCount = 0;
+    const minLength = Math.min(originalWords.length, correctedWords.length);
+    
+    // 단어별 비교
+    for (let i = 0; i < minLength; i++) {
+      console.log(`단어 ${i}: "${originalWords[i]}" vs "${correctedWords[i]}"`);
+      if (originalWords[i] === correctedWords[i]) {
+        matchCount++;
+        console.log(`  ✅ 일치`);
+      } else {
+        console.log(`  ❌ 불일치`);
+      }
+    }
+    
+    // 길이가 다른 경우 - 추가 단어들은 모두 불일치로 처리
+    if (originalWords.length !== correctedWords.length) {
+      console.log(`⚠️ 단어 개수 차이: ${originalWords.length} vs ${correctedWords.length}`);
+    }
+    
+    // 정확도 계산: 일치하는 단어 수 / 더 긴 문장의 단어 수
+    const accuracyValue = (matchCount / maxLength) * 100;
+    
+    console.log('📊 최종 계산:', { 
+      matchCount: `${matchCount}개 일치`, 
+      maxLength: `총 ${maxLength}개 단어`, 
+      calculation: `${matchCount} / ${maxLength} * 100`,
+      accuracyValue: `${accuracyValue}%`
+    });
+    
+    // 검증: 완전히 다른 텍스트면 0%가 되어야 함
+    if (matchCount === 0) {
+      console.log('🔍 검증: 일치하는 단어가 없으므로 0%');
+    }
+    
+    console.log('=== 정확도 계산 완료 ===');
+    
+    // 소수점 한 자리까지 반올림
+    const result = Math.round(accuracyValue * 10) / 10;
+    console.log(`🎯 최종 반환값: ${result}%`);
+    
+    return result;
   };
-
   
   const processAudioWithWav2Vec2 = async (audioBlob: Blob) => {
     console.log('🎤 Wav2Vec2 처리 시작:', { size: audioBlob.size, type: audioBlob.type });
@@ -455,7 +439,6 @@ const StartRecordView: React.FC = () => {
       setInterimText('');
       setAccuracy(null);
       setIncorrectPhonemes([]);
-      setRecordedAudioBlob(null);
       
       // Web Speech API 시작
       try {
