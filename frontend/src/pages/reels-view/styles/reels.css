@@ -1,20 +1,217 @@
 .reels-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 20px;
+  position: relative;
+  width: 500px;
+  height: 700px;
+  background: linear-gradient(135deg, #f0f8ff, #ffffff);
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.reels-content {
-  flex: 1;
+
+.reels-ball {
+  width: 150px;
+  height: 180px;
+  border-radius: 50%;
+  position: absolute;
+  top: 57%;
+  left: 30%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
 }
 
-.reels-controls {
-  padding: 20px;
+
+.reels-card {
+  position: absolute;
+  top: 50%;
+  left: 100%; /* 처음엔 오른쪽 바깥 */
+  width: 180px;
+  height: 240px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 10px;
-} 
+  font-size: 2rem;
+  font-weight: bold;
+  transform: translate(-50%, -50%);
+  transition: left 0.5s cubic-bezier(0.4,0,0.2,1),
+              transform 0.5s cubic-bezier(0.4,0,0.2,1),
+              opacity 0.5s;
+  opacity: 0;
+}
+
+
+/* 카드가 중앙으로 슬라이드 인 */
+.card-slide {
+  animation: slideToBall 3s linear forwards;
+}
+@keyframes slideToBall {
+  0%   { left: 100%; opacity: 0; }
+  10%  { opacity: 1; }
+  100% { left: 50%; opacity: 1; }
+}
+
+
+
+
+/* 실패: 중앙(50%)에서 오른쪽(70%)으로 이동 */
+.card-fail-shift {
+  left: 70%;
+  opacity: 1;
+  /* transition 유지 */
+}
+
+
+/* 재도전 시작 위치 (70%) */
+.card-retry-shift {
+  left: 70%;
+  opacity: 1;
+}
+
+
+/* 70% → 50% 이동 애니메이션 */
+.card-retry-slide {
+  animation: slideFromRetry 2s linear forwards;
+}
+
+
+@keyframes slideFromRetry {
+  0% {
+    left: 60%;
+    opacity: 1;
+  }
+  100% {
+    left: 50%;
+    opacity: 1;
+  }
+}
+
+
+
+
+/* 통과: 왼쪽으로 사라짐 */
+.card-pass {
+  animation: slidePastBall 3s ease-out forwards;
+}
+@keyframes slidePastBall {
+  0% {
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+  100% {
+    left: -50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+}
+
+
+.reels-congrats {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1rem;
+  font-weight: bold;
+  color: #4caf50;
+  background: #fff;
+  padding: 40px 60px;
+  border-radius: 24px;
+  box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+  z-index: 20;white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+
+.reels-grass-road {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 200px;
+  background: url('/images/sprout/grass.png') repeat-x center/auto 100%;
+  animation: grass-move 4s linear infinite;
+  z-index: 30;
+}
+@keyframes grass-move {
+  0% { background-position-x: 0; }
+  100% { background-position-x: -400px; }
+}
+
+
+
+
+
+
+/* 시작 화면 스타일 */
+.reels-start-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 20;white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+
+.start-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2e7d32;
+  margin-bottom: 12px;
+}
+
+
+.start-subtitle {
+  font-size: 1.2rem;
+  color: #66bb6a;
+  margin-bottom: 16px;
+}
+
+
+.start-progress {
+  font-size: 1rem;
+  color: #777;
+  margin-bottom: 32px;
+}
+
+
+.start-button {
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 32px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+  transition: all 0.3s ease;
+}
+
+
+.start-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+
+.start-button:active {
+  transform: translateY(0);
+}
+
+
+
