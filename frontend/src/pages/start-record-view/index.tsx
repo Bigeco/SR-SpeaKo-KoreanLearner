@@ -723,27 +723,30 @@ const StartRecordView: React.FC = () => {
         onRecordingComplete={async (audioUrl, audioBlob) => {
           console.log('새로운 녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
           if (audioBlob) {
-            setRecordedAudioBlob(audioBlob);
-            
             try {
-              console.log('새로운 녹음본으로 Wav2Vec2 처리 시작');
+              // 1. Wav2Vec2 처리
+              console.log('Wav2Vec2 처리 시작');
               const wav2vecResult = await processAudioWithWav2Vec2(audioBlob);
-              const finalCorrectedText = accumulatedWebSpeechTextRef.current || "수학을 배우고 있어요";
               
-              // finalCorrectedText만 g2pk 변환
+              // 2. Web Speech API 결과 가져오기
+              const finalCorrectedText = accumulatedWebSpeechTextRef.current || wav2vecResult;
+              
+              // 3. G2PK 변환 (교정된 문장만)
+              console.log('G2PK 변환 시작:', { finalCorrectedText });
               const correctedG2pk = await convertToG2pk(finalCorrectedText);
               
-              console.log('처리 결과:', {
+              console.log('전체 처리 결과:', {
                 wav2vec결과: wav2vecResult,
                 교정된문장: finalCorrectedText,
                 교정문장_G2PK: correctedG2pk
               });
               
-              // 상태 업데이트
+              // 4. 상태 업데이트
               setTranscribedText(wav2vecResult);
-              setG2pkText(correctedG2pk);  // g2pk 결과 저장
+              setCorrectedText(finalCorrectedText);
+              setG2pkText(correctedG2pk);
               
-              // wav2vecResult와 g2pk 변환된 correctedText로 정확도 계산
+              // 5. 정확도 계산 (wav2vecResult와 correctedG2pk 비교)
               const finalAccuracy = calculateAccuracyScore(wav2vecResult, correctedG2pk);
               setAccuracy(finalAccuracy);
               setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, correctedG2pk));
