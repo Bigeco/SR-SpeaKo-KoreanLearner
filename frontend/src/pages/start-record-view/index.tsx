@@ -148,46 +148,36 @@ const StartRecordView: React.FC = () => {
     };
     
     // 음성 인식 결과
+    // 문장부호 제거 함수 추가
+    const removePunctuation = (text: string): string => {
+      return text.replace(/[^\w\s가-힣]/g, '');
+    };
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      // 녹음이 중지된 상태면 결과 처리하지 않음
       if (recordingStateRef.current !== 'recording') {
         console.log('녹음 중지 상태이므로 음성 인식 결과 무시');
         return;
       }
-      
-      let finalTranscript = '';
-      let interimTranscript = '';
-      
-      console.log('Web Speech API 결과 받음:', event.results.length);
-      
-      // 모든 결과 처리
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        console.log(`결과 ${i}: "${transcript}", isFinal: ${event.results[i].isFinal}`);
-        
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-      
-      // 최종 결과가 있을 때 누적 (녹음 중일 때만)
-      if (finalTranscript && recordingStateRef.current === 'recording') {
-        console.log('Web Speech API 최종 텍스트 (교정된 문장):', `"${finalTranscript}"`);
-        
-        // 기존 누적 텍스트에 새로운 최종 텍스트 추가
+
+      // 가장 최신의 결과만 사용
+      const lastResult = event.results[event.results.length - 1];
+      if (!lastResult) return;
+
+      // 현재 말하고 있는 내용에서 문장부호 제거
+      const currentTranscript = removePunctuation(lastResult[0].transcript);
+
+      if (lastResult.isFinal) {
+        // 최종 결과인 경우: 누적
+        console.log('최종 결과 추가:', currentTranscript);
         setAccumulatedWebSpeechText(prev => {
-          const newAccumulated = prev ? `${prev} ${finalTranscript}`.trim() : finalTranscript;
-          console.log('누적된 Web Speech API 텍스트:', `"${newAccumulated}"`);
-          return newAccumulated;
+          // 이전 텍스트가 있으면 공백을 추가하여 연결
+          return prev ? `${prev} ${currentTranscript}` : currentTranscript;
         });
-      }
-      
-      // 중간 결과 업데이트 (실시간 표시용, 녹음 중일 때만)
-      if (interimTranscript && recordingStateRef.current === 'recording') {
-        console.log('중간 결과 업데이트:', `"${interimTranscript}"`);
-        setInterimText(interimTranscript);
+        setInterimText(''); // 중간 결과 초기화
+      } else {
+        // 중간 결과인 경우: 현재 말하고 있는 부분만 보여주기
+        console.log('중간 결과 업데이트:', currentTranscript);
+        setInterimText(currentTranscript);
       }
     };
     
