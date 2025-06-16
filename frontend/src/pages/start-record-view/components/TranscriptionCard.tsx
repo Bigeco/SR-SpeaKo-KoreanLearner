@@ -105,19 +105,6 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
               });
             })()}
           </div>
-          <div className="mt-2">
-            <button 
-              onClick={onPlayAudio}
-              className="flex items-center text-gray-500 text-sm"
-            >
-              <span className="flex items-center">
-                <Volume2 size={16} className="mr-1 relative top-[1px]" />
-              </span>
-              <span className="leading-none">
-                {isPlaying ? '재생 중...' : '들어보기'}
-              </span>
-            </button>
-          </div>
         </div>
       )}
 
@@ -182,6 +169,20 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             <span className="text-sm font-medium text-blue-600">이렇게 발음해보세요(g2pk)</span>
           </div>
           <p className="text-gray-800 text-lg text-center">{g2pkText}</p>
+          {/* 들어보기 버튼을 여기로 이동 */}
+          <div className="mt-2">
+            <button 
+              onClick={onPlayAudio}
+              className="flex items-center text-gray-500 text-sm"
+            >
+              <span className="flex items-center">
+                <Volume2 size={16} className="mr-1 relative top-[1px]" />
+              </span>
+              <span className="leading-none">
+                {isPlaying ? '재생 중...' : '들어보기'}
+              </span>
+            </button>
+          </div>
         </div>
       )}
     </div>
