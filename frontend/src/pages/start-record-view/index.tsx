@@ -17,6 +17,7 @@ import {
   downloadAudioForAnalysis,
   analyzeAudioBlob
 } from '../../utils/wav2vec2_api';
+import { convertToG2pk } from '../../utils/g2pk_api';
 import './styles/start-record.css';
 
 // Web Speech API 타입 정의
@@ -94,6 +95,9 @@ const StartRecordView: React.FC = () => {
   // 로마자 정렬 관련
   const [romanizationAlignments, setRomanizationAlignments] = useState<{ wrong: string[], correct: string[] } | null>(null);
   
+  // G2PK 변환 결과 상태 추가
+  const [g2pkText, setG2pkText] = useState<string>(''); // g2pk 상태 추가
+
   // Web Speech API 지원 확인 및 권한 요청
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -471,6 +475,7 @@ const StartRecordView: React.FC = () => {
       setInterimText('');
       setAccuracy(null);
       setIncorrectPhonemes([]);
+      setG2pkText(''); // 녹음 시작시 초기화
       
       try {
         recognitionRef.current?.start();
@@ -479,19 +484,21 @@ const StartRecordView: React.FC = () => {
       }
     } else {
       // 녹음 중지
-      console.log('녹음 중지');
       setRecordingState('completed');
       recognitionRef.current?.stop();
       
-      // Use recordedAudioBlob here
-      if (recordedAudioBlob) {
-        console.log('Processing recorded audio:', recordedAudioBlob);
-        const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
-        if (webSpeechResult) {
-          setCorrectedText(webSpeechResult);
+      const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
+      if (webSpeechResult) {
+        setCorrectedText(webSpeechResult);
+        
+        // G2PK 변환 추가
+        try {
+          const g2pkResult = await convertToG2pk(webSpeechResult);
+          setG2pkText(g2pkResult);
+        } catch (error) {
+          console.error('G2PK 변환 실패:', error);
         }
       }
-      
       setInterimText('');
     }
   };
@@ -653,6 +660,7 @@ const StartRecordView: React.FC = () => {
             renderHighlightedCorrections={renderHighlightedCorrections}
             wrongRomanizations={romanizationAlignments?.wrong}
             correctRomanizations={romanizationAlignments?.correct}
+            g2pkText={g2pkText}  // g2pkText 전달
           />
           
           {/* 추가 안내 (idle 상태일 때) */}

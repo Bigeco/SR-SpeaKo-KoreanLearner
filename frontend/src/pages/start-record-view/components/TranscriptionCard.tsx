@@ -12,6 +12,7 @@ interface TranscriptionCardProps {
   renderHighlightedCorrections: () => React.ReactNode;
   wrongRomanizations?: string[];
   correctRomanizations?: string[];
+  g2pkText?: string;  // 추가
 }
 
 // Add a helper function for character-level diff highlighting
@@ -42,20 +43,22 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   isPlaying,
   onPlayAudio,
   wrongRomanizations,
-  correctRomanizations
+  correctRomanizations,
+  g2pkText
 }) => {
   // 콘솔 출력 추가
   console.log('transcribedText:', transcribedText);
   console.log('correctedText:', correctedText);
   console.log('wrongRomanizations:', wrongRomanizations);
   console.log('correctRomanizations:', correctRomanizations);
+  console.log('g2pkText:', g2pkText);
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
       {/* 원본 전사 텍스트 */}
       <div className={`p-4 ${recordingState === 'completed' ? 'bg-gray-50 border-b' : ''}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-500">인식된 문장</span>
+          <span className="text-sm font-medium text-gray-500">이렇게 발음했어요</span>
           <div className="flex items-center h-8">
             <AudioWaveform 
               isActive={recordingState === 'recording'} 
@@ -109,7 +112,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
       {recordingState === 'completed' && correctedText && (
         <div className="p-4 bg-green-50">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-green-600">교정된 문장</span>
+            <span className="text-sm font-medium text-green-600">이 문장을 말하려고 했나요?</span>
             <div className="flex items-center h-8">
               <AudioWaveform 
                 isActive={isPlaying} 
@@ -170,8 +173,17 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
           </div>
         </div>
       )}
+      {/* G2PK 발음 표기 (completed 상태이고 g2pkText가 있을 때만 표시) */}
+      {recordingState === 'completed' && g2pkText && (
+        <div className="p-4 bg-blue-50 border-t border-blue-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-blue-600">이렇게 발음해보세요</span>
+          </div>
+          <p className="text-gray-800 text-lg text-center">{g2pkText}</p>
+        </div>
+      )}
     </div>
   );
 };
 
-export default TranscriptionCard; 
+export default TranscriptionCard;
