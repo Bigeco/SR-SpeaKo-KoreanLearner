@@ -148,18 +148,23 @@ const StartRecordView: React.FC = () => {
     };
     
     // 음성 인식 결과
+    // 문장부호 제거 함수 추가
+    const removePunctuation = (text: string): string => {
+      return text.replace(/[^\w\s가-힣]/g, '');
+    };
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (recordingStateRef.current !== 'recording') {
         console.log('녹음 중지 상태이므로 음성 인식 결과 무시');
         return;
       }
 
-      // 현재 받은 결과들 중 마지막 결과만 사용
+      // 가장 최신의 결과만 사용
       const lastResult = event.results[event.results.length - 1];
       if (!lastResult) return;
 
-      // 현재 말하고 있는 내용 (마지막 결과)
-      const currentTranscript = lastResult[0].transcript;
+      // 현재 말하고 있는 내용에서 문장부호 제거
+      const currentTranscript = removePunctuation(lastResult[0].transcript);
 
       if (lastResult.isFinal) {
         // 최종 결과인 경우: 누적
