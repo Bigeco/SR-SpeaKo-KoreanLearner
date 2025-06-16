@@ -50,6 +50,11 @@ declare global {
 }
 
 const StartRecordView: React.FC = () => {
+  // Add this line near the top with other refs
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // @ts-ignore
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
   const navigate = useNavigate();
   
   // 상태 관리
@@ -77,10 +82,6 @@ const StartRecordView: React.FC = () => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isSupported, setIsSupported] = useState<boolean>(false);
   const [micPermission, setMicPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
-  
-  // 오디오 요소 참조
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
   
   // Wav2Vec2 서버 상태
   const [wav2vec2ServerReady, setWav2vec2ServerReady] = useState<boolean>(false);
@@ -218,14 +219,6 @@ const StartRecordView: React.FC = () => {
         incorrectPhonemes: incorrectPhonemes.length > 0 ? incorrectPhonemes : ['ㄱ', 'ㅓ', 'ㄹ'] // 예시 데이터
       }
     });
-  };
-  
-  // 텍스트 정규화 함수 (구두점 제거 및 공백 정리)
-  const normalizeText = (text: string): string => {
-    return text
-      .replace(/[.,!?;:]/g, '') // 구두점 제거
-      .replace(/\s+/g, ' ')     // 연속 공백을 하나로
-      .trim();                  // 앞뒤 공백 제거 (toLowerCase 제거)
   };
   
   // 발음 정확도 계산
@@ -490,11 +483,15 @@ const StartRecordView: React.FC = () => {
       setRecordingState('completed');
       recognitionRef.current?.stop();
       
-      // Web Speech API 결과만 저장
-      const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
-      if (webSpeechResult) {
-        setCorrectedText(webSpeechResult);
+      // Use recordedAudioBlob here
+      if (recordedAudioBlob) {
+        console.log('Processing recorded audio:', recordedAudioBlob);
+        const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
+        if (webSpeechResult) {
+          setCorrectedText(webSpeechResult);
+        }
       }
+      
       setInterimText('');
     }
   };
