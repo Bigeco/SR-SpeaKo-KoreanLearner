@@ -229,102 +229,150 @@ const StartRecordView: React.FC = () => {
   };
   
   // 발음 정확도 계산
-  const calculateAccuracy = (original: string, corrected: string): number => {
-    console.log('=== 정확도 계산 시작 ===');
-    console.log('원본 입력:', { 
-      original: `"${original}"`, 
-      corrected: `"${corrected}"`,
-      originalType: typeof original,
-      correctedType: typeof corrected
-    });
-    
+  // 텍스트 전처리 함수
+  const preprocessText = (text: string | undefined | null, removeSpaces = true, removePunctuation = true): string => {
     // null, undefined, 빈 문자열 체크
-    if (!original || !corrected || original.trim() === '' || corrected.trim() === '') {
-      console.log('❌ 빈 텍스트 또는 null/undefined로 인한 0% 반환');
-      return 0;
+    if (!text || typeof text !== 'string') {
+      return '';
     }
     
-    // 텍스트 정규화
-    const normalizedOriginal = normalizeText(original);
-    const normalizedCorrected = normalizeText(corrected);
+    let result = text.trim();
     
-    console.log('정규화 후:', { 
-      normalizedOriginal: `"${normalizedOriginal}"`, 
-      normalizedCorrected: `"${normalizedCorrected}"`
-    });
-    
-    // 정규화 후 빈 문자열 체크
-    if (!normalizedOriginal || !normalizedCorrected || 
-        normalizedOriginal.trim() === '' || normalizedCorrected.trim() === '') {
-      console.log('❌ 정규화 후 빈 텍스트로 인한 0% 반환');
-      return 0;
+    if (removePunctuation) {
+      result = result.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9]/g, ''); // 한글, 영어, 숫자 제외
     }
     
-    // 완전히 동일한 경우만 100%
-    if (normalizedOriginal === normalizedCorrected) {
-      console.log('✅ 완전히 동일한 텍스트 → 100% 반환');
-      return 100.0;
+    if (removeSpaces) {
+      result = result.replace(/\s+/g, '');
     }
-    
-    // 단어 분리
-    const originalWords = normalizedOriginal.split(/\s+/).filter(word => word.length > 0);
-    const correctedWords = normalizedCorrected.split(/\s+/).filter(word => word.length > 0);
-    
-    console.log('단어 분리 후:', { 
-      originalWords, 
-      correctedWords,
-      originalLength: originalWords.length,
-      correctedLength: correctedWords.length
-    });
-    
-    const maxLength = Math.max(originalWords.length, correctedWords.length);
-    
-    if (maxLength === 0) {
-      console.log('❌ 단어가 없어서 0% 반환');
-      return 0;
-    }
-    
-    let matchCount = 0;
-    const minLength = Math.min(originalWords.length, correctedWords.length);
-    
-    // 단어별 비교
-    for (let i = 0; i < minLength; i++) {
-      console.log(`단어 ${i}: "${originalWords[i]}" vs "${correctedWords[i]}"`);
-      if (originalWords[i] === correctedWords[i]) {
-        matchCount++;
-        console.log(`  ✅ 일치`);
-      } else {
-        console.log(`  ❌ 불일치`);
-      }
-    }
-    
-    // 길이가 다른 경우 - 추가 단어들은 모두 불일치로 처리
-    if (originalWords.length !== correctedWords.length) {
-      console.log(`⚠️ 단어 개수 차이: ${originalWords.length} vs ${correctedWords.length}`);
-    }
-    
-    // 정확도 계산: 일치하는 단어 수 / 더 긴 문장의 단어 수
-    const accuracyValue = (matchCount / maxLength) * 100;
-    
-    console.log('📊 최종 계산:', { 
-      matchCount: `${matchCount}개 일치`, 
-      maxLength: `총 ${maxLength}개 단어`, 
-      calculation: `${matchCount} / ${maxLength} * 100`,
-      accuracyValue: `${accuracyValue}%`
-    });
-    
-    // 검증: 완전히 다른 텍스트면 0%가 되어야 함
-    if (matchCount === 0) {
-      console.log('🔍 검증: 일치하는 단어가 없으므로 0%');
-    }
-    
-    console.log('=== 정확도 계산 완료 ===');
-    
-    // 소수점 한 자리까지 반올림
-    const result = Math.round(accuracyValue * 10) / 10;
-    console.log(`🎯 최종 반환값: ${result}%`);
     
     return result;
+  };
+
+  // 안전한 레벤슈타인 거리 계산 함수
+  const calculateLevenshtein = (u: string[], v: string[]): {
+    distance: number;
+    substitutions: number;
+    deletions: number;
+    insertions: number;
+  } => {
+    // 입력 배열 유효성 검사
+    if (!Array.isArray(u) || !Array.isArray(v)) {
+      console.error('calculateLevenshtein: 입력이 배열이 아닙니다', { u, v });
+      return { distance: 0, substitutions: 0, deletions: 0, insertions: 0 };
+    }
+
+    // 빈 배열 처리
+    if (u.length === 0 && v.length === 0) {
+      return { distance: 0, substitutions: 0, deletions: 0, insertions: 0 };
+    }
+    if (u.length === 0) {
+      return { distance: v.length, substitutions: 0, deletions: 0, insertions: v.length };
+    }
+    if (v.length === 0) {
+      return { distance: u.length, substitutions: 0, deletions: u.length, insertions: 0 };
+    }
+
+    const prev: number[] = Array(v.length + 1).fill(0).map((_, i) => i);
+    let curr: number[] = new Array(v.length + 1);
+    const prevOps: [number, number, number][] = Array(v.length + 1).fill(null).map((_, i) => [0, 0, i]);
+    let currOps: [number, number, number][] = new Array(v.length + 1);
+
+    for (let x = 1; x <= u.length; x++) {
+      curr[0] = x;
+      currOps[0] = [0, x, 0];
+      
+      for (let y = 1; y <= v.length; y++) {
+        const delCost = prev[y] + 1;
+        const insCost = curr[y - 1] + 1;
+        const subCost = prev[y - 1] + (u[x - 1] !== v[y - 1] ? 1 : 0);
+
+        if (subCost <= delCost && subCost <= insCost) {
+          curr[y] = subCost;
+          const [s, d, i] = prevOps[y - 1];
+          currOps[y] = [s + (u[x - 1] !== v[y - 1] ? 1 : 0), d, i];
+        } else if (delCost < insCost) {
+          curr[y] = delCost;
+          const [s, d, i] = prevOps[y];
+          currOps[y] = [s, d + 1, i];
+        } else {
+          curr[y] = insCost;
+          const [s, d, i] = currOps[y - 1];
+          currOps[y] = [s, d, i + 1];
+        }
+      }
+      
+      // 배열 복사
+      for (let i = 0; i <= v.length; i++) {
+        prev[i] = curr[i];
+        prevOps[i] = [...currOps[i]]; // 깊은 복사
+      }
+    }
+
+    const [substitutions, deletions, insertions] = currOps[v.length];
+    return {
+      distance: curr[v.length],
+      substitutions,
+      deletions,
+      insertions
+    };
+  };
+
+  // 안전한 정확도 계산 함수
+  const calculateAccuracyScore = (
+    recognizedText: string | undefined | null,
+    correctedText: string | undefined | null
+  ): number => {
+    console.log('정확도 계산 시작:', { recognizedText, correctedText });
+    
+    // 입력값 유효성 검사
+    if (!recognizedText || !correctedText) {
+      console.warn('정확도 계산: 입력 텍스트가 없습니다');
+      return 0;
+    }
+
+    try {
+      const hyp = preprocessText(recognizedText, true, true);
+      const ref = preprocessText(correctedText, true, true);
+      
+      console.log('전처리 결과:', { hyp, ref });
+
+      if (!hyp || !ref) {
+        console.warn('정확도 계산: 전처리 후 텍스트가 비어있습니다');
+        return 0;
+      }
+
+      const hypChars = Array.from(hyp);
+      const refChars = Array.from(ref);
+      
+      console.log('문자 배열:', { hypChars, refChars });
+
+      if (!Array.isArray(hypChars) || !Array.isArray(refChars)) {
+        console.error('정확도 계산: Array.from() 실패');
+        return 0;
+      }
+
+      const { substitutions, deletions, insertions } = calculateLevenshtein(hypChars, refChars);
+      const hits = refChars.length - substitutions - deletions;
+      const total = substitutions + deletions + insertions + hits;
+
+      console.log('레벤슈타인 결과:', { substitutions, deletions, insertions, hits, total });
+
+      if (total === 0) {
+        return 100;
+      }
+
+      const cer = (substitutions + deletions + insertions) / total;
+      const crr = 1 - cer;
+      const accuracy = Math.max(0, Math.min(100, Math.round(crr * 100)));
+      
+      console.log('최종 정확도:', accuracy);
+      return accuracy;
+      
+    } catch (error) {
+      console.error('정확도 계산 중 오류:', error);
+      return 0;
+    }
   };
   
   const processAudioWithWav2Vec2 = async (audioBlob: Blob) => {
@@ -417,21 +465,12 @@ const StartRecordView: React.FC = () => {
   // 녹음 시작/중지 처리
   const handleRecordingToggle = async (isRecording: boolean) => {
     if (!isSupported) {
-      alert('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome, Safari, Edge를 사용해주세요.');
+      alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
       return;
     }
     
     if (isRecording) {
-      // 마이크 권한이 거부된 경우 다시 요청
-      if (micPermission === 'denied') {
-        await checkMicrophonePermission();
-        if (micPermission === 'denied') {
-          alert('마이크 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
-          return;
-        }
-      }
-      
-      // 녹음 시작 - 모든 상태 초기화
+      // 녹음 시작 - 상태 초기화
       setRecordingState('recording');
       setTranscribedText('');
       setAccumulatedWebSpeechText('');
@@ -440,7 +479,6 @@ const StartRecordView: React.FC = () => {
       setAccuracy(null);
       setIncorrectPhonemes([]);
       
-      // Web Speech API 시작
       try {
         recognitionRef.current?.start();
       } catch (error) {
@@ -448,43 +486,16 @@ const StartRecordView: React.FC = () => {
       }
     } else {
       // 녹음 중지
-      console.log('녹음 중지 시작 - 상태 변경');
-      setRecordingState('completed'); // 먼저 상태 변경하여 추가 onresult 이벤트 차단
-      
+      console.log('녹음 중지');
+      setRecordingState('completed');
       recognitionRef.current?.stop();
       
-      // 더 긴 지연으로 Web Speech API 최종 결과 대기
-      setTimeout(async () => {
-        // Web Speech API 최종 결과를 교정된 문장으로 설정
-        const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
-        
-        console.log('녹음 중지 후 Web Speech API 결과 (교정된 문장):', `"${webSpeechResult}"`);
-        
-        if (webSpeechResult) {
-          setCorrectedText(webSpeechResult);
-        }
-        
-        // Wav2Vec2로 최종 인식 처리 (녹음된 오디오 있는 경우)
-        if (recordedAudioBlob) {
-          console.log('녹음된 오디오로 Wav2Vec2 처리 시작');
-          const wav2vecResult = transcribedText; // 이미 setTranscribedText로 저장됨
-          const finalCorrectedText = webSpeechResult || "수학을 배우고 있어요"; // fallback
-          const finalAccuracy = calculateAccuracy(wav2vecResult, finalCorrectedText);
-          
-          setAccuracy(finalAccuracy);
-          setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, finalCorrectedText));
-        } else {
-          console.warn('녹음된 오디오 없음, Wav2Vec2 처리 스킵');
-          
-          // Wav2Vec2 처리 없이 Web Speech API 결과만으로 처리
-          if (webSpeechResult) {
-            setTranscribedText(webSpeechResult); // 임시로 동일하게 설정
-            setAccuracy(100); // Web Speech API 결과가 정답이므로 100%
-          }
-        }
-        
-        setInterimText(''); // 중간 텍스트 제거
-      }, 1000);
+      // Web Speech API 결과만 저장
+      const webSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
+      if (webSpeechResult) {
+        setCorrectedText(webSpeechResult);
+      }
+      setInterimText('');
     }
   };
   
@@ -703,17 +714,36 @@ const StartRecordView: React.FC = () => {
 
       {/* 녹음 컨트롤 - 고정 위치 */}
       <div className="fixed bottom-32 left-0 right-0 flex justify-center mb-4">
-        <AudioRecorder
-          onRecordingComplete={async (audioUrl, audioBlob) => {
-            console.log('녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
-            if (audioBlob) {
-              setRecordedAudioBlob(audioBlob);
-              // 녹음이 끝난 최신 Blob을 바로 처리
-              await processAudioWithWav2Vec2(audioBlob);
+      <AudioRecorder
+        onRecordingComplete={async (audioUrl, audioBlob) => {
+          console.log('새로운 녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
+          if (audioBlob) {
+            // 최신 녹음본 저장
+            setRecordedAudioBlob(audioBlob);
+            
+            // 여기서만 Wav2Vec2 처리
+            try {
+              console.log('새로운 녹음본으로 Wav2Vec2 처리 시작');
+              const wav2vecResult = await processAudioWithWav2Vec2(audioBlob);
+              const finalCorrectedText = accumulatedWebSpeechTextRef.current || "수학을 배우고 있어요";
+              
+              console.log('Wav2Vec2 처리 결과:', {
+                wav2vecResult,
+                finalCorrectedText
+              });
+              
+              // 상태 업데이트
+              setTranscribedText(wav2vecResult);
+              const finalAccuracy = calculateAccuracyScore(wav2vecResult, finalCorrectedText);
+              setAccuracy(finalAccuracy);
+              setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, finalCorrectedText));
+            } catch (error) {
+              console.error('Wav2Vec2 처리 실패:', error);
             }
-          }}
-          autoDownload={false}
-          fileName="start-recording.wav"
+          }
+        }}
+        autoDownload={false}
+        fileName="start-recording.wav"
         >
           {({ isRecording, startRecording, stopRecording }) => (
             <RecordControls
