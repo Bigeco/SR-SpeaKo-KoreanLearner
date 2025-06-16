@@ -723,27 +723,32 @@ const StartRecordView: React.FC = () => {
         onRecordingComplete={async (audioUrl, audioBlob) => {
           console.log('새로운 녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
           if (audioBlob) {
-            // 최신 녹음본 저장
             setRecordedAudioBlob(audioBlob);
             
-            // 여기서만 Wav2Vec2 처리
             try {
               console.log('새로운 녹음본으로 Wav2Vec2 처리 시작');
               const wav2vecResult = await processAudioWithWav2Vec2(audioBlob);
               const finalCorrectedText = accumulatedWebSpeechTextRef.current || "수학을 배우고 있어요";
               
-              console.log('Wav2Vec2 처리 결과:', {
-                wav2vecResult,
-                finalCorrectedText
+              // finalCorrectedText만 g2pk 변환
+              const correctedG2pk = await convertToG2pk(finalCorrectedText);
+              
+              console.log('처리 결과:', {
+                wav2vec결과: wav2vecResult,
+                교정된문장: finalCorrectedText,
+                교정문장_G2PK: correctedG2pk
               });
               
               // 상태 업데이트
               setTranscribedText(wav2vecResult);
-              const finalAccuracy = calculateAccuracyScore(wav2vecResult, finalCorrectedText);
+              setG2pkText(correctedG2pk);  // g2pk 결과 저장
+              
+              // wav2vecResult와 g2pk 변환된 correctedText로 정확도 계산
+              const finalAccuracy = calculateAccuracyScore(wav2vecResult, correctedG2pk);
               setAccuracy(finalAccuracy);
-              setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, finalCorrectedText));
+              setIncorrectPhonemes(analyzeIncorrectPhonemes(wav2vecResult, correctedG2pk));
             } catch (error) {
-              console.error('Wav2Vec2 처리 실패:', error);
+              console.error('처리 실패:', error);
             }
           }
         }}
