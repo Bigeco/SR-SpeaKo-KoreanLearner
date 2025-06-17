@@ -386,14 +386,14 @@ const StartRecordView: React.FC = () => {
       }
       
       // 일반 API 방식 테스트
-      console.log('📱 앱 방식 (/transcribe) 테스트 중...');
+      console.log('앱 방식 (/transcribe) 테스트 중...');
       const result = await transcribeAudioWithWav2Vec2(audioBlob, 'recording.wav');
       
       // 웹 UI 방식도 테스트 (비교용)
-      console.log('🌐 웹 UI 방식 (/submit) 테스트 중...');
+      console.log('웹 UI 방식 (/submit) 테스트 중...');
       try {
         const webResult = await transcribeAudioWithSubmit(audioBlob, 'recording.wav');
-        console.log('🔄 결과 비교:', {
+        console.log('결과 비교:', {
           앱결과: result.transcription,
           웹결과: webResult.transcription,
           동일함: result.transcription === webResult.transcription
@@ -445,25 +445,25 @@ const StartRecordView: React.FC = () => {
       
       try {
         recognitionRef.current?.start();
-        console.log('🗣️ Web Speech API 시작됨');
+        console.log(' Web Speech API 시작됨');
       } catch (error) {
-        console.error('❌ 음성 인식 시작 오류:', error);
+        console.error('음성 인식 시작 오류:', error);
       }
     } else {
       // 녹음 중지
-      console.log('⏹️ 녹음 중지');
+      console.log('녹음 중지');
       setRecordingState('completed');
       
       try {
         recognitionRef.current?.stop();
-        console.log('🛑 Web Speech API 중지됨');
+        console.log('Web Speech API 중지됨');
         
         // 중지 후 잠시 대기하여 최종 결과 수집
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const finalWebSpeechResult = accumulatedWebSpeechTextRef.current || interimText;
         
-        console.log('📋 최종 Web Speech API 결과:', {
+        console.log('최종 Web Speech API 결과:', {
           accumulated: accumulatedWebSpeechTextRef.current,
           interim: interimText,
           final: finalWebSpeechResult
@@ -476,17 +476,17 @@ const StartRecordView: React.FC = () => {
           try {
             const g2pkResult = await convertToG2pk(finalWebSpeechResult);
             setG2pkText(g2pkResult);
-            console.log('🔄 즉시 G2PK 변환 완료:', g2pkResult);
+            console.log('즉시 G2PK 변환 완료:', g2pkResult);
           } catch (error) {
-            console.error('❌ 즉시 G2PK 변환 실패:', error);
+            console.error('즉시 G2PK 변환 실패:', error);
           }
         } else {
-          console.warn('⚠️ Web Speech API에서 결과를 받지 못했습니다');
+          console.warn('Web Speech API에서 결과를 받지 못했습니다');
         }
         
         setInterimText('');
       } catch (error) {
-        console.error('❌ 음성 인식 중지 오류:', error);
+        console.error('음성 인식 중지 오류:', error);
       }
     }
   };
@@ -551,34 +551,7 @@ const StartRecordView: React.FC = () => {
 
   // Add toggleHelp handler
   const toggleHelp = () => setShowHelp((prev) => !prev);
-/*
-  // recordingState가 completed가 되고, transcribedText와 correctedText가 모두 있을 때 로마자 정렬 호출
-  useEffect(() => {
-    if (
-      recordingState === 'completed' &&
-      transcribedText &&
-      correctedText &&
-      !romanizationProcessedRef.current // 아직 처리 안됐을 때만 실행
-    ) {
-
-      romanizationProcessedRef.current = true;  // 처리 중 표시
-      console.log('중복 방지를 위한 로마자 정렬 완료')
-
-      // 비동기 호출
-      getRomanizationAlignments(transcribedText, correctedText)
-        .then(setRomanizationAlignments)
-        .catch(() => {
-          setRomanizationAlignments(null);
-          romanizationProcessedRef.current = false;
-          console.log('중복 방지를 위한 로마자 정렬 완료')
-        });
-    } else if (recordingState === 'recording') {
-        // 새로운 녹음 시작 시 초기화
-        romanizationProcessedRef.current = false;
-        setRomanizationAlignments(null);
-      }
-    }, [recordingState, transcribedText, correctedText]);
-*/
+  
   return (
     <div className="start-record-container">
       {/* 헤더 */}

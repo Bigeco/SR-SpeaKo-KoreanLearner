@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
 import { Volume2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
 import { AudioWaveform } from '../../../components/common/AudioWavefrom';
-import { getDiffRomanizations } from '../../../utils/romanizer_api';
-import { textToSpeech, checkServerHealth } from '../../../utils/cosyvoice2_api';
-
+import { checkServerHealth, textToSpeech } from '../../../utils/cosyvoice2_api';
+import { correctSpacing } from '../../../utils/spacing_correction';
 interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
   transcribedText: string;
@@ -342,28 +341,70 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
           </div>
           <div className="flex justify-center gap-2">
             {(() => {
-              const transcribedWords = transcribedText.split(' ');
+              const spacingCorrectedText = correctSpacing(transcribedText, correctedText);
+              console.log('🔧 띄어쓰기 교정 적용:', {
+                original: transcribedText,
+                corrected: spacingCorrectedText,
+                target: correctedText
+              });
+              const transcribedWords = spacingCorrectedText.split(' ');
               const correctedWords = correctedText.split(' ');
+
+              console.log('📝 단어 분리 결과:', {
+                transcribedWords,
+                correctedWords,
+                lengthMatch: transcribedWords.length === correctedWords.length
+              })
+
               return correctedWords.map((word, idx) => {
                 const transcribedWord = transcribedWords[idx] || '';
+                
+                console.log('🎯 단어별 분석:', {
+                  idx,
+                  word,
+                  transcribedWord,
+                  wrongRomanizations: wrongRomanizations?.[idx],
+                  correctRomanizations: correctRomanizations?.[idx],
+                  isChanged: word !== transcribedWord
+                });
+
                 if (word !== transcribedWord && correctRomanizations && correctRomanizations[idx]) {
                   // 음절 단위로 분리
                   const userSylls = transcribedWord.split('');
                   const correctSylls = word.split('');
-                  const romanSylls = correctRomanizations[idx].split('-');
-                  const diffRomans = getDiffRomanizations(correctSylls, userSylls, romanSylls);
-                  const diffSpans = highlightDiffChars(transcribedWord, word, 'corrected');
+                  
+                  // 🔥 핵심: 단어별 로마자를 음절별로 분리
+                  const wrongRomanSylls: string[] = wrongRomanizations?.[idx] ? wrongRomanizations[idx].split('-') : [];
+                  const correctRomanSylls: string[] = correctRomanizations[idx] ? correctRomanizations[idx].split('-') : [];
+                  
+                  console.log('🔤 로마자 분리:', {
+                    wrongRomanSylls,   
+                    correctRomanSylls,
+                    userSylls,         
+                    correctSylls 
+                  });
+                  
+                  // 음절별로 로마자 표시
                   return (
                     <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
                       <div className="flex">
-                        {diffSpans.map((syllSpan, sidx) => (
-                          <div key={sidx} className="flex flex-col items-center">
-                            <span className="text-lg">{syllSpan}</span>
-                            {diffRomans[sidx] && (
-                              <span className="text-xs text-green-600 font-semibold mt-0.5">{diffRomans[sidx]}</span>
-                            )}
-                          </div>
-                        ))}
+                        {correctSylls.map((correctSyll, syllIdx) => {
+                          const userSyll = userSylls[syllIdx] || '';
+                          const isDifferent = userSyll !== correctSyll;
+                          
+                          return (
+                            <div key={syllIdx} className="flex flex-col items-center">
+                              <span className={`text-lg ${isDifferent ? 'text-green-600 font-semibold' : 'text-gray-800'}`}>
+                                {correctSyll}
+                              </span>
+                              {isDifferent && correctRomanSylls[syllIdx] && (
+                                <span className="text-xs text-green-600 font-semibold mt-0.5">
+                                  {correctRomanSylls[syllIdx]}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -397,28 +438,48 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             if (recordingState !== 'completed' || !transcribedText || !correctedText) {
               return <p className="text-gray-800 text-lg">{transcribedText || (recordingState === 'idle' ? '아직 녹음되지 않았습니다' : '인식 중...')}</p>;
             }
-            const transcribedWords = transcribedText.split(' ');
+            const spacingCorrectedText = correctSpacing(transcribedText, correctedText);
+            const transcribedWords = spacingCorrectedText.split(' ');
             const correctedWords = correctedText.split(' ');
+            
             return transcribedWords.map((word, idx) => {
               const correctedWord = correctedWords[idx] || '';
+              
               if (word !== correctedWord && wrongRomanizations && wrongRomanizations[idx]) {
                 // 음절 단위로 분리
                 const userSylls = word.split('');
                 const correctSylls = correctedWord.split('');
-                const romanSylls = wrongRomanizations[idx].split('-');
-                const diffRomans = getDiffRomanizations(userSylls, correctSylls, romanSylls);
-                const diffSpans = highlightDiffChars(word, correctedWord, 'transcribed');
+                
+                // 🔥 핵심: 단어별 로마자를 음절별로 분리
+                const wrongRomanSylls: string[] = wrongRomanizations[idx] ? wrongRomanizations[idx].split('-') : [];
+                
+                console.log('🔤 원본 섹션 로마자 분리:', {
+                  wrongRomanSylls,
+                  userSylls,
+                  correctSylls
+                });
+                
+                // 음절별로 로마자 표시
                 return (
                   <div key={idx} className="flex flex-col items-center min-w-[1.5em]">
                     <div className="flex">
-                      {diffSpans.map((syllSpan, sidx) => (
-                        <div key={sidx} className="flex flex-col items-center">
-                          <span className="text-lg">{syllSpan}</span>
-                          {diffRomans[sidx] && (
-                            <span className="text-xs text-red-500 font-semibold mt-0.5">{diffRomans[sidx]}</span>
-                          )}
-                        </div>
-                      ))}
+                      {userSylls.map((userSyll, syllIdx) => {
+                        const correctSyll = correctSylls[syllIdx] || '';
+                        const isDifferent = userSyll !== correctSyll;
+                        
+                        return (
+                          <div key={syllIdx} className="flex flex-col items-center">
+                            <span className={`text-lg ${isDifferent ? 'text-red-500 line-through' : 'text-gray-800'}`}>
+                              {userSyll}
+                            </span>
+                            {isDifferent && wrongRomanSylls[syllIdx] && (
+                              <span className="text-xs text-red-500 font-semibold mt-0.5">
+                                {wrongRomanSylls[syllIdx]}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
