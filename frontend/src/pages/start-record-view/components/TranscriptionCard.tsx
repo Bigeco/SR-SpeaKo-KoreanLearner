@@ -278,7 +278,10 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             {/* TTS playback button */}
             {recordedAudioBlob && (
               <button 
-                onClick={handleTtsPlay}
+                onClick={() => {
+                  console.log('🎯 TTS 버튼 클릭됨');
+                  handleTtsPlay();
+                }}
                 disabled={isTtsPlaying}
                 className="flex items-center text-blue-500 text-sm disabled:opacity-50"
               >
