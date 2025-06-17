@@ -8,7 +8,7 @@ interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
   transcribedText: string;
   correctedText: string;
-  isPlaying: boolean;
+  // isPlaying: boolean;
   onPlayAudio: () => void;
   renderHighlightedCorrections: () => React.ReactNode;
   wrongRomanizations?: string[];
@@ -75,7 +75,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   recordingState,
   transcribedText,
   correctedText,
-  isPlaying,
+  // isPlaying,
   onPlayAudio,
   wrongRomanizations,
   correctRomanizations,
