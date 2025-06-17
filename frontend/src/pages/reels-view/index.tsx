@@ -263,7 +263,7 @@ if (!gameStarted || WORDS.length !== 5) {
               //key={`${currentIndex}-${retryCount}`}
               onRecordingComplete={handleRecordingComplete}
               fileName={`reels_${currentIndex}_${Date.now()}.wav`}
-              autoDownload={true}
+              autoDownload={false}
             >
               {({ isRecording: rec, startRecording, stopRecording }) => (
                 <button
