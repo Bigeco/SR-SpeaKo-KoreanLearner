@@ -53,20 +53,40 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   const [ttsError, setTtsError] = useState<string | null>(null);
 
   const handleTtsPlay = async () => {
-    if (!recordedAudioBlob || !correctedText) return;
+    if (!recordedAudioBlob || !correctedText) {
+      console.log('❌ TTS 재생 실패: 필요한 데이터가 없습니다', {
+        hasAudioBlob: !!recordedAudioBlob,
+        hasCorrectedText: !!correctedText,
+        audioBlobSize: recordedAudioBlob?.size,
+        correctedText
+      });
+      return;
+    }
 
     try {
       setIsTtsPlaying(true);
       setTtsError(null);
 
+      console.log('🔍 TTS 서버 상태 확인 중...');
       // Check server health first
       const isServerAvailable = await checkServerHealth();
       if (!isServerAvailable) {
         throw new Error('음성 합성 서버에 연결할 수 없습니다.');
       }
+      console.log('✅ TTS 서버 연결 성공');
 
       // Convert Blob to File
       const audioFile = new File([recordedAudioBlob], 'prompt.wav', { type: 'audio/wav' });
+      console.log('📁 오디오 파일 준비 완료:', {
+        fileName: audioFile.name,
+        fileSize: audioFile.size,
+        fileType: audioFile.type
+      });
+
+      console.log('🎤 TTS API 호출 시작:', {
+        promptText: transcribedText,
+        targetText: correctedText
+      });
 
       // Call TTS API
       const result = await textToSpeech(
@@ -75,19 +95,44 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
         correctedText     // Use corrected text as target text
       );
 
+      console.log('📥 TTS API 응답 수신:', {
+        hasAudio: !!result.audio,
+        audioLength: result.audio?.length,
+        error: result.error
+      });
+
       if (result.error) {
         throw new Error(result.error);
       }
 
+      if (!result.audio) {
+        throw new Error('음성 데이터가 없습니다.');
+      }
+
       // Play the audio
+      console.log('🔊 오디오 재생 시작');
       const audio = new Audio(`data:audio/wav;base64,${result.audio}`);
-      audio.onended = () => setIsTtsPlaying(false);
-      audio.onerror = () => {
+      
+      audio.onended = () => {
+        console.log('✅ 오디오 재생 완료');
+        setIsTtsPlaying(false);
+      };
+      
+      audio.onerror = (error) => {
+        console.error('❌ 오디오 재생 오류:', error);
         setIsTtsPlaying(false);
         setTtsError('오디오 재생 중 오류가 발생했습니다.');
       };
-      await audio.play();
+
+      try {
+        await audio.play();
+        console.log('▶️ 오디오 재생 시작됨');
+      } catch (playError) {
+        console.error('❌ 오디오 재생 실패:', playError);
+        throw new Error('오디오 재생을 시작할 수 없습니다.');
+      }
     } catch (error) {
+      console.error('💥 TTS 처리 중 오류 발생:', error);
       setIsTtsPlaying(false);
       setTtsError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
     }
