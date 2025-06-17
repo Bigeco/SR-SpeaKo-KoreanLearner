@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { AudioRecorder } from '../../components/common/AudioRecorder';
 import RecordControls from '../../components/common/RecordControls';
 import { NavBar } from '../../components/layout/NavBar';
-import { calculateKoreanCRR } from '../../utils/cer_utils';
 import { convertToG2pk } from '../../utils/g2pk_api';
 import { analyzeIncorrectPhonemes } from '../../utils/phoneme_analysis';
 import { getRomanizationAlignments } from '../../utils/romanizer_api';
@@ -215,6 +214,153 @@ const StartRecordView: React.FC = () => {
         incorrectPhonemes: incorrectPhonemes.length > 0 ? incorrectPhonemes : []
       }
     });
+  };
+  
+  // 발음 정확도 계산
+  // 텍스트 전처리 함수
+  const preprocessText = (text: string | undefined | null, removeSpaces = true, removePunctuation = true): string => {
+    // null, undefined, 빈 문자열 체크
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
+    
+    let result = text.trim();
+    
+    if (removePunctuation) {
+      result = result.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9]/g, ''); // 한글, 영어, 숫자 제외
+    }
+    
+    if (removeSpaces) {
+      result = result.replace(/\s+/g, '');
+    }
+    
+    return result;
+  };
+
+  // 안전한 레벤슈타인 거리 계산 함수
+  const calculateLevenshtein = (u: string[], v: string[]): {
+    distance: number;
+    substitutions: number;
+    deletions: number;
+    insertions: number;
+  } => {
+    // 입력 배열 유효성 검사
+    if (!Array.isArray(u) || !Array.isArray(v)) {
+      console.error('calculateLevenshtein: 입력이 배열이 아닙니다', { u, v });
+      return { distance: 0, substitutions: 0, deletions: 0, insertions: 0 };
+    }
+
+    // 빈 배열 처리
+    if (u.length === 0 && v.length === 0) {
+      return { distance: 0, substitutions: 0, deletions: 0, insertions: 0 };
+    }
+    if (u.length === 0) {
+      return { distance: v.length, substitutions: 0, deletions: 0, insertions: v.length };
+    }
+    if (v.length === 0) {
+      return { distance: u.length, substitutions: 0, deletions: u.length, insertions: 0 };
+    }
+
+    const prev: number[] = Array(v.length + 1).fill(0).map((_, i) => i);
+    let curr: number[] = new Array(v.length + 1);
+    const prevOps: [number, number, number][] = Array(v.length + 1).fill(null).map((_, i) => [0, 0, i]);
+    let currOps: [number, number, number][] = new Array(v.length + 1);
+
+    for (let x = 1; x <= u.length; x++) {
+      curr[0] = x;
+      currOps[0] = [0, x, 0];
+      
+      for (let y = 1; y <= v.length; y++) {
+        const delCost = prev[y] + 1;
+        const insCost = curr[y - 1] + 1;
+        const subCost = prev[y - 1] + (u[x - 1] !== v[y - 1] ? 1 : 0);
+
+        if (subCost <= delCost && subCost <= insCost) {
+          curr[y] = subCost;
+          const [s, d, i] = prevOps[y - 1];
+          currOps[y] = [s + (u[x - 1] !== v[y - 1] ? 1 : 0), d, i];
+        } else if (delCost < insCost) {
+          curr[y] = delCost;
+          const [s, d, i] = prevOps[y];
+          currOps[y] = [s, d + 1, i];
+        } else {
+          curr[y] = insCost;
+          const [s, d, i] = currOps[y - 1];
+          currOps[y] = [s, d, i + 1];
+        }
+      }
+      
+      // 배열 복사
+      for (let i = 0; i <= v.length; i++) {
+        prev[i] = curr[i];
+        prevOps[i] = [...currOps[i]]; // 깊은 복사
+      }
+    }
+
+    const [substitutions, deletions, insertions] = currOps[v.length];
+    return {
+      distance: curr[v.length],
+      substitutions,
+      deletions,
+      insertions
+    };
+  };
+
+  // 안전한 정확도 계산 함수
+  const calculateAccuracyScore = (
+    recognizedText: string | undefined | null,
+    correctedText: string | undefined | null
+  ): number => {
+    console.log('정확도 계산 시작:', { recognizedText, correctedText });
+    
+    // 입력값 유효성 검사
+    if (!recognizedText || !correctedText) {
+      console.warn('정확도 계산: 입력 텍스트가 없습니다');
+      return 0;
+    }
+
+    try {
+      const hyp = preprocessText(recognizedText, true, true);
+      const ref = preprocessText(correctedText, true, true);
+      
+      console.log('전처리 결과:', { hyp, ref });
+
+      if (!hyp || !ref) {
+        console.warn('정확도 계산: 전처리 후 텍스트가 비어있습니다');
+        return 0;
+      }
+
+      const hypChars = Array.from(hyp);
+      const refChars = Array.from(ref);
+      
+      console.log('문자 배열:', { hypChars, refChars });
+
+      if (!Array.isArray(hypChars) || !Array.isArray(refChars)) {
+        console.error('정확도 계산: Array.from() 실패');
+        return 0;
+      }
+
+      const { substitutions, deletions, insertions } = calculateLevenshtein(hypChars, refChars);
+      const hits = refChars.length - substitutions - deletions;
+      const total = substitutions + deletions + insertions + hits;
+
+      console.log('레벤슈타인 결과:', { substitutions, deletions, insertions, hits, total });
+
+      if (total === 0) {
+        return 100;
+      }
+
+      const cer = (substitutions + deletions + insertions) / total;
+      const crr = 1 - cer;
+      const accuracy = Math.max(0, Math.min(100, Math.round(crr * 100)));
+      
+      console.log('최종 정확도:', accuracy);
+      return accuracy;
+      
+    } catch (error) {
+      console.error('정확도 계산 중 오류:', error);
+      return 0;
+    }
   };
   
   const processAudioWithWav2Vec2 = async (audioBlob: Blob) => {
@@ -637,22 +783,15 @@ const StartRecordView: React.FC = () => {
                 setCorrectedText(webSpeechResult);      // 교정된 문장
                 setG2pkText(correctG2pk);               // 교정된 문장의 G2PK 표기
                 
-                // 6. 정확도 계산 및 음소 분석
+                // 6. 정확도 계산 (원래 방식 사용)
                 if (wav2vecResult && webSpeechResult) {
                   // 두 텍스트가 다를 때만 정확도 계산
                   if (wav2vecResult !== webSpeechResult) {
-                    const crrResult = calculateKoreanCRR(
-                      webSpeechResult,           // reference (교정된 문장)
-                      wav2vecResult,             // hypothesis (실제 발음)
-                      true,                      // remove_spaces
-                      true                       // remove_punctuation
-                    );
-                    
-                    console.log('📊 상세 CRR 결과:', crrResult);
-                    setAccuracy(crrResult.accuracy);
+                    const finalAccuracy = calculateAccuracyScore(wav2vecResult, webSpeechResult);
+                    setAccuracy(finalAccuracy);
                     
                     // 틀린 음소 분석 (정확도가 100% 미만일 때만)
-                    if (crrResult.accuracy < 100) {
+                    if (finalAccuracy < 100) {
                       const analyzedPhonemes = analyzeIncorrectPhonemes(
                         wav2vecResult,     // 사용자가 실제 발음한 것
                         webSpeechResult    // 정확한 발음
