@@ -39,36 +39,47 @@ function highlightDiffChars(original: string, corrected: string, type: 'transcri
 }
 
 // WAV 헤더를 추가하는 함수
-function addWavHeader(audioData: ArrayBuffer, sampleRate: number = 16000): ArrayBuffer {
-  const length = audioData.byteLength;
-  const buffer = new ArrayBuffer(44 + length);
-  const view = new DataView(buffer);
+async function blobToWav(blob: Blob, sampleRate = 16000): Promise<Blob> {
+  const audioCtx = new AudioContext({ sampleRate });
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const channelData = audioBuffer.getChannelData(0); // mono
+  const numChannels = 1;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
   
-  // WAV 헤더 작성
-  const writeString = (offset: number, string: string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
+  const buffer = new ArrayBuffer(44 + channelData.length * 2);
+  const view = new DataView(buffer);
+
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
     }
   };
-  
-  writeString(0, 'RIFF'); // ChunkID
-  view.setUint32(4, 36 + length, true); // ChunkSize
-  writeString(8, 'WAVE'); // Format
-  writeString(12, 'fmt '); // Subchunk1ID
-  view.setUint32(16, 16, true); // Subchunk1Size
-  view.setUint16(20, 1, true); // AudioFormat (PCM)
-  view.setUint16(22, 1, true); // NumChannels
-  view.setUint32(24, sampleRate, true); // SampleRate
-  view.setUint32(28, sampleRate * 2, true); // ByteRate
-  view.setUint16(32, 2, true); // BlockAlign
-  view.setUint16(34, 16, true); // BitsPerSample
-  writeString(36, 'data'); // Subchunk2ID
-  view.setUint32(40, length, true); // Subchunk2Size
-  
-  // 오디오 데이터 복사
-  new Uint8Array(buffer, 44).set(new Uint8Array(audioData));
-  
-  return buffer;
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + channelData.length * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true); // byteRate
+  view.setUint16(32, blockAlign, true); // blockAlign
+  view.setUint16(34, 16, true); // bitsPerSample
+  writeString(36, 'data');
+  view.setUint32(40, channelData.length * 2, true);
+
+  // PCM 16bit signed little endian으로 복사
+  for (let i = 0; i < channelData.length; i++) {
+    const sample = Math.max(-1, Math.min(1, channelData[i]));
+    view.setInt16(44 + i * 2, sample * 0x7FFF, true);
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
 }
 
 const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
@@ -130,14 +141,9 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
       });
 
       // WAV 헤더 추가 (서버에서 인식할 수 있도록)
-      const wavBuffer = addWavHeader(arrayBuffer);
-      console.log('🔧 WAV 헤더 추가 완료:', {
-        originalSize: arrayBuffer.byteLength,
-        newSize: wavBuffer.byteLength
-      });
+      const wavBlob = await blobToWav(recordedAudioBlob);
 
       // 새로운 WAV Blob 생성
-      const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
       const audioFile = new File([wavBlob], 'prompt.wav', { type: 'audio/wav' });
       
       console.log('📁 오디오 파일 준비 완료:', {
