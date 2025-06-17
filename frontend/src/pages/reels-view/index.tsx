@@ -1,10 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ReelsText } from './components/ReelsText';
 import { NavBar } from '../../components/layout/NavBar';
 import './styles/reels.css';
 
+import { AudioRecorder } from '../../components/common/AudioRecorder';
+import { transcribeAudioWithWav2Vec2 } from '../../utils/wav2vec2_api';
+import { calculateAccuracyScore } from '../start-record-view/recordUtils';
 
-const WORDS = ['사과', '공룡', '안녕', '김치', '한국'];
+const WORDS_DATASET = [
+  "사과", "공룡", "안녕", "김치", "한국", "바나나", "토끼", "바다", "구름", "나무",
+  "호랑이", "자동차", "비행기", "도서관", "학교", "병원", "우유", "치즈", "강아지", "고양이",
+  "햄버거", "피자", "감자", "고구마", "달걀", "우산", "모자", "장갑", "컵", "책상",
+  "의자", "컴퓨터", "전화기", "텔레비전", "시계", "자전거", "버스", "기차", "지하철", "엘리베이터",
+  "계단", "창문", "문", "벽", "바닥", "천장", "냉장고", "에어컨", "선풍기", "라디오"
+];
+
+const WORDS_PRONUNCIATION = ["사과", "공뇽", "안녕", "김치", "한국", "바나나", "토끼", "바다", "구름", "나무",
+"호랑이", "자동차", "비행기", "도서관", "학꾜", "병원", "우유", "치즈", "강아지", "고양이",
+"햄버거", "피자", "감자", "고구마", "달걀", "우산", "모자", "장갑", "컵", "책쌍",
+"의자", "컴퓨터", "전화기", "텔레비전", "시계", "자전거", "버스", "기차", "지하철", "엘리베이터",
+"계단", "창문", "문", "벽", "바닥", "천장", "냉장고", "에어컨", "선풍기", "라디오"];
+
+
 const SPRITE_IMAGES = [
   '/images/sprout/sprout_stage_1_seed.png',
   '/images/sprout/sprout_stage_2_first_leaf.png',
@@ -16,66 +33,141 @@ const SPRITE_IMAGES = [
 
 const Index: React.FC = () => {
   const [gameStarted, setGameStarted] = useState(false);
+  const [WORDS, setWORDS] = useState<string[]>([]);
+  const [pronunciations, setPronunciations] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [cardState, setCardState] = useState<'idle' | 'moving' | 'failed' | 'passed' | 'retrying' | 'moving-from-retry'>('idle');
   const [finished, setFinished] = useState(false);
   const [retryMessage, setRetryMessage] = useState('');
   const [isBackgroundMoving, setIsBackgroundMoving] = useState(false);
+  const [transcribedText, setTranscribedText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [transcribedResults, setTranscribedResults] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const cardStateRef = useRef(cardState);
+  
 
 
   const handleGameStart = () => {
-    setGameStarted(true);
+  const getRandomIndices = (count: number, max: number): number[] => {
+    const indices = new Set<number>();
+    while (indices.size < count) {
+      const rand = Math.floor(Math.random() * max);
+      indices.add(rand);
+    }
+    return Array.from(indices);
   };
 
+  const randomIndices = getRandomIndices(5, 50); // 0~49 중 5개 인덱스
+  setWORDS(randomIndices.map(index => WORDS_DATASET[index]));
+  const selectedPronunciations = randomIndices.map(index => WORDS_PRONUNCIATION[index]);
+  
+  setPronunciations(selectedPronunciations);
+  setCurrentIndex(0);
+  //setCardState('idle'); // 초기 상태 설정
+  setGameStarted(true);
 
-  useEffect(() => {
-  if ((cardState === 'moving' || cardState === 'moving-from-retry') &&
-      isRecording) {
+  setTimeout(() => {
+    setCardState('moving');
+    setIsBackgroundMoving(true);
+  }, 100);
+};
+
+
+  console.log('Recording complete called with cardState:', cardState);
+
+  const handleRecordingComplete = async (audioUrl: string, audioBlob?: Blob) => {
+
+  console.log('✅ handleRecordingComplete 실행:', cardState);
+
+  if (!audioBlob) return;
+  if (!(cardState === 'moving' || cardState === 'moving-from-retry' || cardState === 'failed')) return;
+
+  setIsProcessing(true);
+
+  try {
+    const targetWord = pronunciations[currentIndex];
+    const result = await transcribeAudioWithWav2Vec2(audioBlob);
+    const transcription = result.transcription;
+
+    setTranscribedResults(prev => {
+      const updated = [...prev];
+      updated[currentIndex] = transcription;
+      return updated;
+    });
+
+    setTranscribedText(transcription);
+
+    const accuracy = calculateAccuracyScore(transcription, targetWord);
+
     const timeout = setTimeout(() => {
-      const isCorrect = Math.random() > 0.3;
+      const isCorrect = accuracy >= 33;
       if (isCorrect) {
         setCardState('passed');
         setRetryMessage('');
+        console.log(currentIndex, WORDS.length);
+
         setTimeout(() => {
           if (currentIndex < WORDS.length - 1) {
-            setCurrentIndex((prev) => prev + 1);
+            setCurrentIndex(prev => prev + 1);
             setCardState('idle');
-            setIsRecording(false);
+            setIsProcessing(false);
           } else {
             setFinished(true);
           }
         }, 800);
       } else {
+        setIsProcessing(false);
         setCardState('failed');
-        setRetryMessage(`다시 "${WORDS[currentIndex]}" 발음을 시도하세요!`);
-        setIsRecording(false);
+        setIsBackgroundMoving(true);
+        setRetryMessage(`다시 "${targetWord}" 발음을 시도하세요! (정확도: ${accuracy}%)`);
+
+        setTranscribedText('');
+        
       }
-    }, 3000);
-
-
-    return () => clearTimeout(timeout);
+    }, 3000); // 이 닫는 괄호가 없어서 원래 코드가 깨졌음
+  } catch (error) {
+    console.error('음성 인식 오류:', error);
+    setIsProcessing(false);
+    setCardState('failed');
+    setRetryMessage('음성 인식에 실패했습니다. 다시 시도해 주세요.');
   }
-}, [cardState, isRecording, currentIndex]);
+};
+
+useEffect(() => {
+  cardStateRef.current = cardState;
+}, [cardState]);
+
+const handleRetry = () => {
+setRetryCount(prev => prev + 1);
+};
+
+useEffect(() => {
+  setTranscribedText('');
+  setIsProcessing(false);
+}, [currentIndex]);
+  
+   
+useEffect(() => {
+  setCardState('moving');
+}, [currentIndex]);
+
+
 
 
 // 여기서 handleStart 함수 선언 (useEffect 밖)
-const handleStart = () => {
-  if (cardState === 'failed') {
-    setCardState('retrying');
-    setIsBackgroundMoving(true);
-  } else if (cardState === 'retrying') {
+useEffect(() => {
+  if (cardState === 'retrying') {
     setCardState('moving-from-retry');
-    setIsRecording(true);
-    setRetryMessage('');
     setIsBackgroundMoving(true);
   } else if (cardState === 'idle') {
     setCardState('moving');
-    setIsRecording(true);
     setRetryMessage('');
     setIsBackgroundMoving(true);
   }
-};
+}, [cardState]);
 
 // 실패 메시지(retryMessage) 표시 시 배경 멈춤
 useEffect(() => {
@@ -89,7 +181,7 @@ useEffect(() => {
 }, [gameStarted]);
 
 
-if (!gameStarted) {
+if (!gameStarted || WORDS.length !== 5) {
     return (
       <div className="reels-outer-container reels-onboarding-bg">
         <div className="reels-container centered reels-onboarding-layout">
@@ -172,15 +264,41 @@ if (!gameStarted) {
             >
               <ReelsText word={WORDS[currentIndex]} />
             </div>
-            <div className="reels-controls-bottom">
-              <button 
-                className={`mic-button${isRecording ? ' recording' : ''}`}
-                onClick={handleStart}
-                disabled={isRecording}
-              >
-                {isRecording ? '녹음 중...' : '🎤 시작'}
-              </button>
-            </div>
+              <div className="reels-controls-bottom">
+              <AudioRecorder
+              //key={`${currentIndex}-${retryCount}`}
+              onRecordingComplete={handleRecordingComplete}
+              fileName={`reels_${currentIndex}_${Date.now()}.wav`}
+              autoDownload={true}
+            >
+              {({ isRecording: rec, startRecording, stopRecording }) => (
+                <button
+                  className={`mic-button${rec ? ' recording' : ''}`}
+                  onClick={async () => {
+                    if (rec) {
+                      stopRecording();
+                      
+                    } else {
+                      setTranscribedText('');
+                      startRecording();
+                      if (cardState === 'failed') {
+                        setCardState('moving-from-retry');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+
+                        setTimeout(() => {
+                          stopRecording();
+                        }, 3000);
+                      }
+                    }
+                  }}
+                  disabled={isProcessing}
+                >
+                  {rec ? '⏹ 중지' : '🎤 시작'}
+                </button>
+              )}
+            </AudioRecorder>
+
+              </div>
           </>
         ) : (
           <div className="reels-congrats">
