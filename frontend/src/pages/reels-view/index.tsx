@@ -36,16 +36,13 @@ const Index: React.FC = () => {
   const [WORDS, setWORDS] = useState<string[]>([]);
   const [pronunciations, setPronunciations] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
   const [cardState, setCardState] = useState<'idle' | 'moving' | 'failed' | 'passed' | 'retrying' | 'moving-from-retry'>('idle');
   const [finished, setFinished] = useState(false);
   const [retryMessage, setRetryMessage] = useState('');
   const [isBackgroundMoving, setIsBackgroundMoving] = useState(false);
-  const [transcribedText, setTranscribedText] = useState('');
+  const [_transcribedText, setTranscribedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [transcribedResults, setTranscribedResults] = useState<string[]>([]);
-  const [retryCount, setRetryCount] = useState(0);
+  const [_transcribedResults, setTranscribedResults] = useState<string[]>([]);
   const cardStateRef = useRef(cardState);
   
 
@@ -78,7 +75,7 @@ const Index: React.FC = () => {
 
   console.log('Recording complete called with cardState:', cardState);
 
-  const handleRecordingComplete = async (audioUrl: string, audioBlob?: Blob) => {
+  const handleRecordingComplete = async (_audioUrl: string, audioBlob?: Blob) => {
 
   console.log('✅ handleRecordingComplete 실행:', cardState);
 
@@ -102,8 +99,8 @@ const Index: React.FC = () => {
 
     const accuracy = calculateAccuracyScore(transcription, targetWord);
 
-    const timeout = setTimeout(() => {
-      const isCorrect = accuracy >= 33;
+    setTimeout(() => {
+      const isCorrect = accuracy >= 70;
       if (isCorrect) {
         setCardState('passed');
         setRetryMessage('');
@@ -127,7 +124,7 @@ const Index: React.FC = () => {
         setTranscribedText('');
         
       }
-    }, 3000); // 이 닫는 괄호가 없어서 원래 코드가 깨졌음
+    }, 3000); 
   } catch (error) {
     console.error('음성 인식 오류:', error);
     setIsProcessing(false);
@@ -140,9 +137,6 @@ useEffect(() => {
   cardStateRef.current = cardState;
 }, [cardState]);
 
-const handleRetry = () => {
-setRetryCount(prev => prev + 1);
-};
 
 useEffect(() => {
   setTranscribedText('');
