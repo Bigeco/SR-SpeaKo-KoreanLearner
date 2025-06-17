@@ -15,7 +15,7 @@ interface TranscriptionCardProps {
   g2pkText?: string;
   recordedAudioBlob?: Blob;
 }
-
+/*
 // Add a helper function for character-level diff highlighting
 function highlightDiffChars(original: string, corrected: string, type: 'transcribed' | 'corrected') {
   const maxLen = Math.max(original.length, corrected.length);
@@ -36,6 +36,7 @@ function highlightDiffChars(original: string, corrected: string, type: 'transcri
     return <span key={i}>{type === 'transcribed' ? o : c}</span>;
   });
 }
+*/
 
 // WAV 헤더를 추가하는 함수
 function addWavHeader(audioData: ArrayBuffer, sampleRate: number = 16000): ArrayBuffer {
