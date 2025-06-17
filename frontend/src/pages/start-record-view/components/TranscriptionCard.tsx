@@ -52,7 +52,17 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   const [isTtsPlaying, setIsTtsPlaying] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
 
+  // 디버그 로깅 추가
+  console.log('🎵 TranscriptionCard 렌더링:', {
+    hasAudioBlob: !!recordedAudioBlob,
+    audioBlobSize: recordedAudioBlob?.size,
+    recordingState,
+    transcribedText,
+    correctedText
+  });
+
   const handleTtsPlay = async () => {
+    console.log('🎯 handleTtsPlay 함수 시작');
     if (!recordedAudioBlob || !correctedText) {
       console.log('❌ TTS 재생 실패: 필요한 데이터가 없습니다', {
         hasAudioBlob: !!recordedAudioBlob,
@@ -276,10 +286,13 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             </button>
 
             {/* TTS playback button */}
-            {recordedAudioBlob && (
+            {recordedAudioBlob ? (
               <button 
-                onClick={() => {
-                  console.log('🎯 TTS 버튼 클릭됨');
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  alert('TTS 버튼 클릭됨');  // 기본적인 클릭 확인
+                  console.log('🎯 TTS 버튼 클릭됨 - 버튼 이벤트');
                   handleTtsPlay();
                 }}
                 disabled={isTtsPlaying}
@@ -292,6 +305,10 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
                   {isTtsPlaying ? '음성 합성 중...' : '교정된 발음 듣기'}
                 </span>
               </button>
+            ) : (
+              <div className="text-xs text-gray-500">
+                Debug: recordedAudioBlob 없음
+              </div>
             )}
 
             {/* Error message */}
