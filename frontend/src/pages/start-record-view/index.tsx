@@ -675,7 +675,6 @@ const StartRecordView: React.FC = () => {
             recordingState={recordingState}
             transcribedText={getCurrentDisplayText()}
             correctedText={correctedText}
-            isPlaying={isPlaying}
             onPlayAudio={togglePlayback}
             renderHighlightedCorrections={renderHighlightedCorrections}
             wrongRomanizations={romanizationAlignments?.wrong}
