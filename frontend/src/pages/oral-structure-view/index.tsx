@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowLeft as PrevIcon, Volume2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowLeft as PrevIcon } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavBar } from '../../components/layout/NavBar';
