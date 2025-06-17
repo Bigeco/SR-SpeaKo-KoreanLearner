@@ -369,12 +369,12 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
                   isChanged: word !== transcribedWord
                 });
 
-                if (word !== transcribedWord && correctRomanizations && correctRomanizations[idx]) {
+                if (word !== transcribedWord && recordingState === 'completed' && correctRomanizations && correctRomanizations[idx]) {
                   // 음절 단위로 분리
                   const userSylls = transcribedWord.split('');
                   const correctSylls = word.split('');
                   
-                  // 🔥 핵심: 단어별 로마자를 음절별로 분리
+                  // 단어별 로마자를 음절별로 분리
                   const wrongRomanSylls: string[] = wrongRomanizations?.[idx] ? wrongRomanizations[idx].split('-') : [];
                   const correctRomanSylls: string[] = correctRomanizations[idx] ? correctRomanizations[idx].split('-') : [];
                   
@@ -446,7 +446,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             return transcribedWords.map((word, idx) => {
               const correctedWord = correctedWords[idx] || '';
               
-              if (word !== correctedWord && wrongRomanizations && wrongRomanizations[idx]) {
+              if (word !== correctedWord && recordingState === 'completed' && wrongRomanizations && wrongRomanizations[idx]) {
                 // 음절 단위로 분리
                 const userSylls = word.split('');
                 const correctSylls = correctedWord.split('');
