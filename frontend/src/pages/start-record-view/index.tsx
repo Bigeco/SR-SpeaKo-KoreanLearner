@@ -62,6 +62,7 @@ const StartRecordView: React.FC = () => {
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'completed'>('idle');
   const [isPlaying, setIsPlaying] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // const romanizationProcessedRef = useRef(false);
   
   // 전사 및 교정 텍스트
   const [transcribedText, setTranscribedText] = useState<string>(''); // Wav2Vec2 결과 (인식된 문장)
@@ -72,6 +73,7 @@ const StartRecordView: React.FC = () => {
   const [accumulatedWebSpeechText, setAccumulatedWebSpeechText] = useState<string>('');
   const accumulatedWebSpeechTextRef = useRef('');
   useEffect(() => { accumulatedWebSpeechTextRef.current = accumulatedWebSpeechText; }, [accumulatedWebSpeechText]);
+
   
   // 발음 정확도 - 녹음 완료 시에만 설정
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -549,23 +551,34 @@ const StartRecordView: React.FC = () => {
 
   // Add toggleHelp handler
   const toggleHelp = () => setShowHelp((prev) => !prev);
-
+/*
   // recordingState가 completed가 되고, transcribedText와 correctedText가 모두 있을 때 로마자 정렬 호출
   useEffect(() => {
     if (
       recordingState === 'completed' &&
       transcribedText &&
-      correctedText
+      correctedText &&
+      !romanizationProcessedRef.current // 아직 처리 안됐을 때만 실행
     ) {
+
+      romanizationProcessedRef.current = true;  // 처리 중 표시
+      console.log('중복 방지를 위한 로마자 정렬 완료')
+
       // 비동기 호출
       getRomanizationAlignments(transcribedText, correctedText)
         .then(setRomanizationAlignments)
-        .catch(() => setRomanizationAlignments(null));
-    } else {
-      setRomanizationAlignments(null);
-    }
-  }, [recordingState, transcribedText, correctedText]);
-
+        .catch(() => {
+          setRomanizationAlignments(null);
+          romanizationProcessedRef.current = false;
+          console.log('중복 방지를 위한 로마자 정렬 완료')
+        });
+    } else if (recordingState === 'recording') {
+        // 새로운 녹음 시작 시 초기화
+        romanizationProcessedRef.current = false;
+        setRomanizationAlignments(null);
+      }
+    }, [recordingState, transcribedText, correctedText]);
+*/
   return (
     <div className="start-record-container">
       {/* 헤더 */}
@@ -731,88 +744,98 @@ const StartRecordView: React.FC = () => {
             console.log('🎤 새로운 녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
             if (audioBlob) {
               try {
-                // 1. Wav2Vec2 처리 (사용자가 실제 발음한 것)
+                // 1. Wav2Vec2 처리
                 console.log('🎤 Wav2Vec2 처리 시작');
-                const wav2vecResult = await processAudioWithWav2Vec2(audioBlob);
+                const wav2vecRaw = await processAudioWithWav2Vec2(audioBlob);
                 
-                // 2. Web Speech API 결과 가져오기 - 약간의 대기 시간 추가
+                // 2. Web Speech API 결과 가져오기
                 console.log('⏳ Web Speech API 결과 수집 중...');
-                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms 대기
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
-                let webSpeechResult = accumulatedWebSpeechTextRef.current || interimText || '';
+                let webSpeechRaw = accumulatedWebSpeechTextRef.current || interimText || '';
                 
-                console.log('📝 Web Speech API 상태 확인:', {
-                  accumulated: accumulatedWebSpeechTextRef.current,
-                  interim: interimText,
-                  final: webSpeechResult
-                });
-                
-                // 3. Fallback: Web Speech API 결과가 없으면 Wav2Vec2 결과를 사용
-                if (!webSpeechResult && wav2vecResult) {
+                if (!webSpeechRaw && wav2vecRaw) {
                   console.log('⚠️ Web Speech API 결과 없음, Wav2Vec2 결과를 교정된 문장으로 사용');
-                  webSpeechResult = wav2vecResult;
+                  webSpeechRaw = wav2vecRaw;
                 }
+
+                // 3. 표시용 텍스트 (띄어쓰기 정규화, 문장부호 유지)
+                const normalizeSpacing = (text: string): string => {
+                  return text
+                    .replace(/[^\w\s가-힣]/g, '')  // 문장부호만 제거
+                    .replace(/\s+/g, ' ')          // 연속 공백을 한 칸으로
+                    .trim();                       // 앞뒤 공백 제거
+                };
+
+                const wav2vecDisplay = normalizeSpacing(wav2vecRaw);
+                const webSpeechDisplay = normalizeSpacing(webSpeechRaw);
+
+                const wav2vecResult = preprocessText(wav2vecRaw, true, true); // 공백 제거, 문장부호 제거
+                const webSpeechResult = preprocessText(webSpeechRaw, true, true); // 공백 제거, 문장부호 제거
                 
-                console.log('📝 처리 중간 결과:', {
-                  wav2vec결과: wav2vecResult,
-                  웹스피치결과: webSpeechResult
-                });
-                
-                // 4. G2PK 변환 - 교정된 문장(webSpeechResult)을 G2PK로 변환
+                // 3. G2PK 변환
                 let correctG2pk = '';
-                if (webSpeechResult) {
+                let correctG2pkDis = '';
+                if (webSpeechDisplay) {
                   try {
-                    console.log('🔄 G2PK 변환 시작 - 교정된 문장:', webSpeechResult);
-                    correctG2pk = await convertToG2pk(webSpeechResult);
+                    console.log('🔄 G2PK 변환 시작 - 교정된 문장:', webSpeechDisplay);
+                    correctG2pkDis = await convertToG2pk(webSpeechDisplay);
+                    correctG2pk = preprocessText(correctG2pkDis, true, true);
                     console.log('✅ G2PK 변환 완료:', correctG2pk);
                   } catch (error) {
                     console.error('❌ G2PK 변환 실패:', error);
-                    correctG2pk = webSpeechResult; // fallback
+                    correctG2pk = webSpeechResult;
+                  }
+                }
+                
+                // 4. 정확도 계산
+                let finalAccuracy = 0;
+                if (wav2vecResult && correctG2pk) {
+                  if (wav2vecResult !== correctG2pk) {
+                    finalAccuracy = calculateAccuracyScore(wav2vecResult, correctG2pk);
+                  } else {
+                    finalAccuracy = 100;
+                  }
+                }
+                
+                // 5. 틀린 음소 분석
+                let analyzedPhonemes: string[] = [];
+                if (finalAccuracy < 100 && wav2vecResult && correctG2pk) {
+                  analyzedPhonemes = analyzeIncorrectPhonemes(wav2vecResult, correctG2pk);
+                }
+                
+                // 6. 로마자 정렬
+                let romanizations: { wrong: string[], correct: string[] } | null = null;
+                if (wav2vecDisplay && correctG2pkDis && wav2vecResult !== correctG2pk) {
+                  try {
+                    console.log('🔤 로마자 정렬 시작:', { wav2vecDisplay, correctG2pkDis });
+                    romanizations = await getRomanizationAlignments(wav2vecDisplay, correctG2pkDis);
+                    console.log('✅ 로마자 정렬 완료:', romanizations);
+                  } catch (error) {
+                    console.error('❌ 로마자 정렬 실패:', error);
                   }
                 }
                 
                 console.log('🎯 최종 처리 결과:', {
-                  '실제발음_wav2vec': wav2vecResult,
-                  '교정된문장_webspeech': webSpeechResult,
-                  '교정된문장_g2pk': correctG2pk
+                  '실제발음_wav2vec': wav2vecDisplay,
+                  '교정된문장_webspeech': webSpeechDisplay,
+                  '교정된문장_g2pk': correctG2pkDis,
+                  '정확도': finalAccuracy,
+                  '틀린음소': analyzedPhonemes,
+                  '로마자정렬': romanizations
                 });
                 
-                // 5. 상태 업데이트
-                setTranscribedText(wav2vecResult);      // 사용자가 실제 발음한 것
-                setCorrectedText(webSpeechResult);      // 교정된 문장
-                setG2pkText(correctG2pk);               // 교정된 문장의 G2PK 표기
+                // 7. 🔥 핵심: React.startTransition으로 배치 업데이트
+                React.startTransition(() => {
+                  setTranscribedText(wav2vecDisplay);
+                  setCorrectedText(webSpeechDisplay);
+                  setG2pkText(correctG2pkDis);
+                  setAccuracy(finalAccuracy);
+                  setIncorrectPhonemes(analyzedPhonemes);
+                  setRomanizationAlignments(romanizations);
+                });
                 
-                // 6. 정확도 계산 (원래 방식 사용)
-                if (wav2vecResult && webSpeechResult) {
-                  // 두 텍스트가 다를 때만 정확도 계산
-                  if (wav2vecResult !== webSpeechResult) {
-                    const finalAccuracy = calculateAccuracyScore(wav2vecResult, webSpeechResult);
-                    setAccuracy(finalAccuracy);
-                    
-                    // 틀린 음소 분석 (정확도가 100% 미만일 때만)
-                    if (finalAccuracy < 100) {
-                      const analyzedPhonemes = analyzeIncorrectPhonemes(
-                        wav2vecResult,     // 사용자가 실제 발음한 것
-                        webSpeechResult    // 정확한 발음
-                      );
-                      console.log('🔍 분석된 틀린 음소들:', analyzedPhonemes);
-                      setIncorrectPhonemes(analyzedPhonemes);
-                    } else {
-                      console.log('✅ 완벽한 발음입니다!');
-                      setIncorrectPhonemes([]);
-                    }
-                  } else {
-                    // 두 텍스트가 동일한 경우
-                    console.log('✅ Wav2Vec2와 Web Speech API 결과가 동일 - 완벽한 발음!');
-                    setAccuracy(100);
-                    setIncorrectPhonemes([]);
-                  }
-                } else {
-                  // 텍스트가 없는 경우
-                  console.log('❌ 분석할 텍스트가 없습니다');
-                  setAccuracy(0);
-                  setIncorrectPhonemes([]);
-                }
+                console.log('✅ 모든 상태 업데이트 완료 (배치 처리)');
                 
               } catch (error) {
                 console.error('💥 전체 처리 실패:', error);
