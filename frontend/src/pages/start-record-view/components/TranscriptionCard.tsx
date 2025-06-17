@@ -426,7 +426,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
       {/* 2. 원본 전사 텍스트 */}
       <div className={`p-4 ${recordingState === 'completed' ? 'bg-gray-50 border-b' : ''}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-500">이렇게 발음했어요(wav2vec2)</span>
+          <span className="text-sm font-medium text-gray-500">이렇게 발음했어요</span>
           <div className="flex items-center h-8">
             <AudioWaveform 
               isActive={isOriginalPlaying} // 원본 음성 재생 중일 때 활성화
@@ -519,7 +519,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
       {recordingState === 'completed' && g2pkText && (
         <div className="p-4 bg-blue-50 border-t border-blue-100">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-600">이렇게 발음해보세요(g2pk)</span>
+            <span className="text-sm font-medium text-blue-600">이렇게 발음해보세요</span>
             <div className="flex items-center h-8">
               <AudioWaveform 
                 isActive={isTtsAudioPlaying} // TTS 재생 중일 때 활성화

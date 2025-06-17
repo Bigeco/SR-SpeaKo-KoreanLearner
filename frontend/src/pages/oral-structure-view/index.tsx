@@ -482,10 +482,6 @@ const OralStructureView: React.FC = () => {
                   }}
                 />
               </div>
-              <button className="mt-6 flex items-center justify-center mx-auto text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 px-6 py-3 rounded-lg font-semibold">
-                <Volume2 size={24} className="mr-2" />
-                <span className="text-lg">발음 듣기</span>
-              </button>
             </div>
 
             {/* 발음 설명 */}
