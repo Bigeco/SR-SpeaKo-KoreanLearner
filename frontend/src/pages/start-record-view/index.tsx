@@ -745,7 +745,11 @@ const StartRecordView: React.FC = () => {
             console.log('🎤 새로운 녹음 완료:', { audioUrl, audioBlobSize: audioBlob?.size });
             if (audioBlob) {
               try {
-                // 1. Wav2Vec2 처리
+                // 녹음된 오디오 블롭 저장
+                setRecordedAudioBlob(audioBlob);
+                console.log('💾 녹음된 오디오 블롭 저장됨:', audioBlob.size);
+
+                // 1. Wav2Vec2 처리 (사용자가 실제 발음한 것)
                 console.log('🎤 Wav2Vec2 처리 시작');
                 const wav2vecRaw = await processAudioWithWav2Vec2(audioBlob);
                 
