@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { AudioWaveform } from '../../../components/common/AudioWavefrom';
 import { getDiffRomanizations } from '../../../utils/romanizer_api';
+import { textToSpeech, checkServerHealth } from '../../../utils/cosyvoice2_api';
 
 interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
@@ -12,7 +13,8 @@ interface TranscriptionCardProps {
   renderHighlightedCorrections: () => React.ReactNode;
   wrongRomanizations?: string[];
   correctRomanizations?: string[];
-  g2pkText?: string;  // 추가
+  g2pkText?: string;
+  recordedAudioBlob?: Blob;
 }
 
 // Add a helper function for character-level diff highlighting
@@ -44,8 +46,53 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   onPlayAudio,
   wrongRomanizations,
   correctRomanizations,
-  g2pkText
+  g2pkText,
+  recordedAudioBlob
 }) => {
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+  const [ttsError, setTtsError] = useState<string | null>(null);
+
+  const handleTtsPlay = async () => {
+    if (!recordedAudioBlob || !correctedText) return;
+
+    try {
+      setIsTtsPlaying(true);
+      setTtsError(null);
+
+      // Check server health first
+      const isServerAvailable = await checkServerHealth();
+      if (!isServerAvailable) {
+        throw new Error('음성 합성 서버에 연결할 수 없습니다.');
+      }
+
+      // Convert Blob to File
+      const audioFile = new File([recordedAudioBlob], 'prompt.wav', { type: 'audio/wav' });
+
+      // Call TTS API
+      const result = await textToSpeech(
+        audioFile,
+        transcribedText,  // Use transcribed text as prompt text
+        correctedText     // Use corrected text as target text
+      );
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Play the audio
+      const audio = new Audio(`data:audio/wav;base64,${result.audio}`);
+      audio.onended = () => setIsTtsPlaying(false);
+      audio.onerror = () => {
+        setIsTtsPlaying(false);
+        setTtsError('오디오 재생 중 오류가 발생했습니다.');
+      };
+      await audio.play();
+    } catch (error) {
+      setIsTtsPlaying(false);
+      setTtsError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+    }
+  };
+
   // 콘솔 출력 추가
   console.log('transcribedText:', transcribedText);
   console.log('correctedText:', correctedText);
@@ -169,8 +216,8 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
             <span className="text-sm font-medium text-blue-600">이렇게 발음해보세요(g2pk)</span>
           </div>
           <p className="text-gray-800 text-lg text-center">{g2pkText}</p>
-          {/* 들어보기 버튼을 여기로 이동 */}
-          <div className="mt-2">
+          <div className="mt-2 flex flex-col items-center gap-2">
+            {/* Original audio playback button */}
             <button 
               onClick={onPlayAudio}
               className="flex items-center text-gray-500 text-sm"
@@ -179,9 +226,30 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
                 <Volume2 size={16} className="mr-1 relative top-[1px]" />
               </span>
               <span className="leading-none">
-                {isPlaying ? '재생 중...' : '들어보기'}
+                {isPlaying ? '재생 중...' : '교정된 음성 듣기'}
               </span>
             </button>
+
+            {/* TTS playback button */}
+            {recordedAudioBlob && (
+              <button 
+                onClick={handleTtsPlay}
+                disabled={isTtsPlaying}
+                className="flex items-center text-blue-500 text-sm disabled:opacity-50"
+              >
+                <span className="flex items-center">
+                  <Volume2 size={16} className="mr-1 relative top-[1px]" />
+                </span>
+                <span className="leading-none">
+                  {isTtsPlaying ? '음성 합성 중...' : '교정된 발음 듣기'}
+                </span>
+              </button>
+            )}
+
+            {/* Error message */}
+            {ttsError && (
+              <p className="text-red-500 text-xs mt-1">{ttsError}</p>
+            )}
           </div>
         </div>
       )}

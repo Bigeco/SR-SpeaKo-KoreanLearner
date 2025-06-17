@@ -680,7 +680,8 @@ const StartRecordView: React.FC = () => {
             renderHighlightedCorrections={renderHighlightedCorrections}
             wrongRomanizations={romanizationAlignments?.wrong}
             correctRomanizations={romanizationAlignments?.correct}
-            g2pkText={g2pkText}  // g2pkText 전달
+            g2pkText={g2pkText}
+            recordedAudioBlob={recordedAudioBlob || undefined}
           />
           
           {/* 추가 안내 (idle 상태일 때) */}
