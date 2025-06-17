@@ -10,7 +10,6 @@ import { getRomanizationAlignments } from '../../utils/romanizer_api';
 import {
   analyzeAudioBlob,
   checkWav2Vec2ServerHealth,
-  downloadAudioForAnalysis,
   transcribeAudioWithSubmit,
   transcribeAudioWithWav2Vec2,
   validateAudioFile,
