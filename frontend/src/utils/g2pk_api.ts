@@ -1,6 +1,13 @@
 export async function convertToG2pk(text: string): Promise<string> {
   try {
-    const response = await fetch('http://localhost:8000/g2pk', {
+    // 서버 상태 먼저 확인
+    const healthCheck = await fetch('https://speako-g2pk-server.hf.space/healthcheck');
+    if (!healthCheck.ok) {
+      console.error('G2PK 서버가 실행되지 않았습니다.');
+      return text;
+    }
+
+    const response = await fetch('https://speako-g2pk-server.hf.space/g2pk', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9,13 +16,13 @@ export async function convertToG2pk(text: string): Promise<string> {
     });
     
     if (!response.ok) {
-      throw new Error('G2PK 변환 실패');
+      throw new Error(`서버 오류: ${response.status}`);
     }
     
     const data = await response.json();
     return data.result;
   } catch (error) {
-    console.error('G2PK 변환 중 오류:', error);
-    return text; // 오류 시 원본 반환
+    console.error('G2PK 변환 실패:', error);
+    return text;
   }
 }
