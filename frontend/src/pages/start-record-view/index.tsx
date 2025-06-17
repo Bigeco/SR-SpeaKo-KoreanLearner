@@ -373,7 +373,7 @@ const StartRecordView: React.FC = () => {
       await analyzeAudioBlob(audioBlob);
       
       // 디버깅: 파일 다운로드 (비교용)
-      await downloadAudioForAnalysis(audioBlob, 'app-recording.wav');
+      //await downloadAudioForAnalysis(audioBlob, 'app-recording.wav');
       
       // 파일 검증
       if (!validateAudioFile(audioBlob)) {
