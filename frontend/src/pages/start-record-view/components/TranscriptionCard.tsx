@@ -98,6 +98,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   const [isOriginalPlaying, setIsOriginalPlaying] = useState(false);
   const [isTtsAudioPlaying, setIsTtsAudioPlaying] = useState(false); // TTS 오디오 재생 상태
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [hasClicked, setHasClicked] = React.useState(false);
 
   // 디버그 로깅 추가
   console.log('🎵 TranscriptionCard 렌더링:', {
@@ -107,6 +108,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
     transcribedText,
     correctedText
   });
+  
 
   const handleTtsPlay = async () => {
     console.log('🎯 handleTtsPlay 함수 시작');
@@ -179,10 +181,12 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
         throw new Error('음성 데이터가 없습니다.');
       }
 
+      
       // Play the audio
       console.log('🔊 오디오 재생 시작');
       const audio = new Audio(`data:audio/wav;base64,${result.audio}`);
       
+
       audio.onplay = () => {
         console.log('▶️ TTS 오디오 재생 시작');
         setIsTtsAudioPlaying(true);
@@ -473,6 +477,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
           </div>
           <p className="text-gray-800 text-lg text-center">{g2pkText}</p>
           
+          
           {/* 교정된 발음 듣기 버튼 */}
           {recordedAudioBlob && (
             <div className="mt-3 flex justify-start">
@@ -482,6 +487,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
                   e.stopPropagation();
                   console.log('🎯 TTS 버튼 클릭됨');
                   handleTtsPlay();
+                  setHasClicked(true);
                 }}
                 disabled={isTtsPlaying}
                 className={`flex items-center text-sm hover:text-blue-700 transition-colors ${
