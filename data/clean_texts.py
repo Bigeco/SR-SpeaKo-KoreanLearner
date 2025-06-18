@@ -8,11 +8,13 @@ from typing import List, Dict
 def clean_text(text: str) -> str:
     # 1. 괄호 치환: (first)/(second) → second
     text = re.sub(r'\([^()]+\)/\(([^()]+)\)', r'\1', text)
-    # 2. 단독 슬래시 제거
-    text = re.sub(r'(?<=\s)/(?=\s)', '', text)
-    # 3. * 문자 제거
+    # 2. 단독 슬래시 제거 (슬래시 주변 공백이 있거나 없는 경우 모두 처리)
+    text = re.sub(r'\s*/\s*', ' ', text)
+    # 3. + 문자 제거 (공백 포함)
+    text = re.sub(r'\s*\+\s*', ' ', text)
+    # 4. * 문자 제거
     text = text.replace("*", "")
-    # 4. 불필요한 공백 정리
+    # 5. 불필요한 공백 정리
     return re.sub(r'\s{2,}', ' ', text).strip()
 
 def clean_json_texts(input_path: str, output_path: str = None, text_key: str = "text") -> None:

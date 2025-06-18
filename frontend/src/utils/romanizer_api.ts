@@ -1,3 +1,4 @@
+import { correctSpacing } from './spacing_correction';
 /**
  * Parses a LLaMA3 romanization result string of the form "(wrong)->(correct)"
  * and returns an object with wrong and correct romanizations.
@@ -20,7 +21,7 @@ export function parseLLaMA3RomanizationResult(result: string): { wrong: string, 
  * @param correctInput 교정된 문장
  * @returns 각 단어/음절별 wrong/correct 로마자 표기 배열
  */
-export async function getRomanizationAlignments(
+export async function getBasicRomanizationAlignments(
   userInput: string,
   correctInput: string
 ): Promise<{ wrong: string[], correct: string[] }> {
@@ -68,6 +69,46 @@ export async function getRomanizationAlignments(
   });
 
   return { wrong: wrongArr, correct: correctArr };
+}
+
+/**
+ * 개선된 로마자 정렬 함수 (띄어쓰기 교정 적용)
+ */
+export async function getRomanizationAlignments(
+  userInput: string,
+  correctInput: string
+): Promise<{ wrong: string[], correct: string[] }> {
+  console.log('개선된 로마자 정렬 시작');
+  console.log('원본 입력:', { userInput, correctInput });
+
+  try {
+    // 1. 띄어쓰기 교정 적용
+    const correctedUserInput = correctSpacing(userInput, correctInput);
+    console.log('교정된 사용자 입력:', correctedUserInput);
+
+    // 2. 교정된 텍스트가 원본과 같은지 확인
+    if (correctedUserInput === userInput) {
+      console.log('띄어쓰기 교정이 필요하지 않음');
+    } else {
+      console.log('띄어쓰기 교정 적용됨:', {
+        before: userInput,
+        after: correctedUserInput
+      });
+    }
+
+    // 3. 교정된 텍스트로 로마자 정렬 수행
+    const result = await getBasicRomanizationAlignments(correctedUserInput, correctInput);
+    
+    console.log('최종 로마자 정렬 결과:', result);
+    return result;
+
+  } catch (error) {
+    console.error('개선된 로마자 정렬 실패:', error);
+    
+    // 실패 시 기존 방식으로 fallback
+    console.log('기존 방식으로 fallback');
+    return await getBasicRomanizationAlignments(userInput, correctInput);
+  }
 }
 
 /**

@@ -1,0 +1,8 @@
+model:
+  id: "daeunn/wav2vec2-korean-finetuned2"
+  device: "cuda"
+  sampling_rate: 16000
+
+generate:
+  return_attention_mask: false
+  return_timestamps: false

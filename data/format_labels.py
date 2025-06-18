@@ -21,13 +21,16 @@ def parse_format_1(json_path: Path, txt_path: Path, corpus_name, category, corpu
         "length": meta["length"]
     }
 
-def parse_format_2(json_path: Path, corpus_name, category, corpus_key) -> dict:
+def parse_format_2(json_path: Path, corpus_name, category, corpus_key, target_dataset="train") -> dict:
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     file_name = data.get("fileName")
     record_time = float(data.get("file_info", {}).get("recordTime", 0.0))
-    text = data.get("transcription", {}).get("ReadingLabelText", "")
+    if target_dataset == "train":
+        text = data.get("transcription", {}).get("ReadingLabelText", "")
+    elif target_dataset == "test":
+        text = data.get("transcription", {}).get("AnswerLabelText", "")
 
     if not file_name or not text:
         return None
