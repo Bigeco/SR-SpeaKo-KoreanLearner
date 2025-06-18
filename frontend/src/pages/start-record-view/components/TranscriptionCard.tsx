@@ -98,7 +98,7 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
   const [isOriginalPlaying, setIsOriginalPlaying] = useState(false);
   const [isTtsAudioPlaying, setIsTtsAudioPlaying] = useState(false); // TTS 오디오 재생 상태
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [hasClicked, setHasClicked] = React.useState(false);
+  const [_hasClicked, setHasClicked] = React.useState(false);
 
   // 디버그 로깅 추가
   console.log('🎵 TranscriptionCard 렌더링:', {
