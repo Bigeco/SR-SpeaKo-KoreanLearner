@@ -2,6 +2,7 @@ import { Volume2 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { AudioWaveform } from '../../../components/common/AudioWavefrom';
 import { checkServerHealth, textToSpeech } from '../../../utils/cosyvoice2_api';
+import { convertToG2pk } from '../../../utils/g2pk_api';
 import { correctSpacing } from '../../../utils/spacing_correction';
 interface TranscriptionCardProps {
   recordingState: 'idle' | 'recording' | 'completed';
@@ -154,17 +155,20 @@ const TranscriptionCard: React.FC<TranscriptionCardProps> = ({
         fileType: audioFile.type
       });
 
-      // ✅ 핵심 수정: 둘 다 correctedText 사용
-      console.log('🎤 TTS API 호출 시작 - 수정된 로직:', {
-        promptText: correctedText,  // 정확한 발음
-        targetText: correctedText   // 정확한 발음
+      const g2pkPromptText = await convertToG2pk(correctedText);
+      console.log(`🎤 g2pk 변환 완료: "${correctedText}" -> "${g2pkPromptText}"`);
+
+      // ✅ 핵심 수정: promptText는 g2pk 변환, targetText는 correctedText 사용
+      console.log('🎤 TTS API 호출 시작:', {
+        promptText: g2pkPromptText,
+        targetText: correctedText
       });
 
-      // Call TTS API - 둘 다 correctedText 사용
+      // Call TTS API - promptText는 g2pk, targetText는 correctedText 사용
       const result = await textToSpeech(
         audioFile,
-        correctedText,  // promptText: 정확한 발음
-        correctedText   // targetText: 정확한 발음
+        g2pkPromptText, // promptText: g2pk 변환된 발음
+        correctedText // targetText: 정확한 발음
       );
 
       console.log('📥 TTS API 응답 수신:', {
