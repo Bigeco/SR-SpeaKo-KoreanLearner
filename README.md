@@ -1,8 +1,12 @@
 # Speako: Korean Transcriber+ for Pronunciation Error Visualization & Correction for Learners 🇰🇷
 
-**[View Live Demo](https://speako-kor.netlify.app/)**
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![Live Demo](https://img.shields.io/badge/Demo-Live-2196F3?style=for-the-badge&logo=safari&logoColor=white&labelColor=1976D2)](https://speako-kor.netlify.app/)
+[![Backend](https://img.shields.io/badge/Server-Backend-4CAF50?style=for-the-badge&logo=python&logoColor=white&labelColor=388E3C)](https://huggingface.co/speako)
+[![Model](https://img.shields.io/badge/Model-Wav2Vec2-FF9800?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=F57C00)](https://huggingface.co/daeunn/wav2vec2-korean-finetuned2-loss)
+[![Train & Eval Dataset](https://img.shields.io/badge/Data-Train&Eval-9C27B0?style=for-the-badge&logo=pandas&logoColor=white&labelColor=7B1FA2)](https://huggingface.co/datasets/daeunn/g2pk2_dataset)
+[![Test Dataset](https://img.shields.io/badge/Data-Test-9C27B0?style=for-the-badge&logo=pandas&logoColor=white&labelColor=7B1FA2)](https://huggingface.co/datasets/speako/wav2vec2-test-dataset)
 
 Responding to the global rise of K-culture and the corresponding demand for Korean language learning, our team identified a significant gap in the market: a lack of dedicated tools for pronunciation practice. SpeaKo was developed to address this need, providing learners with immediate, multi-faceted feedback to improve their Korean pronunciation effectively.
 
@@ -36,7 +40,7 @@ A quick look at the user interface and key features of SpeaKo.
 | ![image](https://github.com/user-attachments/assets/826fee6a-965c-492b-be94-2fe95faf4cca) | ![image](https://github.com/user-attachments/assets/da166288-d523-4452-a62f-b69ffd0c357e) |
 
 
-| Visual Feedback | Oral Structure Guide |
+| Visual & Auditory Feedback | Oral Structure Guide |
 | :---: | :---: |
 | ![image](https://github.com/user-attachments/assets/96d7d66f-a32c-4178-8f1b-7823e998baab) | ![image](https://github.com/user-attachments/assets/e5a3223a-2b6a-4f1a-ba5e-ba8227478777) |
 
