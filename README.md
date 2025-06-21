@@ -1,4 +1,4 @@
-# SpeaKo: AI-Powered Korean Pronunciation Practice (A Team Project) 🇰🇷
+# Speako: Korean Transcriber+ for Pronunciation Error Visualization & Correction for Learners 🇰🇷
 
 **[View Live Demo](https://speako-kor.netlify.app/)**
 
@@ -53,6 +53,12 @@ As a Progressive Web App (PWA), SpeaKo can be easily "installed" on your mobile 
 1.  Open [speako-kor.netlify.app](https://speako-kor.netlify.app/) in a compatible browser (like Chrome or Safari).
 2.  Look for the **Install** icon in the address bar (on desktop) or tap the **Share** button and select **"Add to Home Screen"** (on mobile).
 3.  The app will now be available on your home screen or app launcher.
+
+| Android | iOS |
+| :---: | :---: | 
+| ![image](https://github.com/user-attachments/assets/f4c3cea0-4b37-4274-bfd2-cd7766b354a5) | ![image](https://github.com/user-attachments/assets/cfc30bff-b1dc-4d7d-a37c-f112238d555a) |
+
+
 
 ## 🏛️ Architecture & Technical Decisions
 
