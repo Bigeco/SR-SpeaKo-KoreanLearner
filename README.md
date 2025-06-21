@@ -162,7 +162,7 @@ This project is a team project from the Department of Artificial Intelligence at
 - **Hayeon Choi**
   - Role: Frontend (StartRecord, Oral Structure Page), Data (Wav2Vec2 Dataset), Model (g2pk2 Enhancement, CER Logic).
 
-  - GitHub: [@Song-Daeun](https://github.com/Song-Daeun)
+  - GitHub: [@choihayeon07](https://github.com/choihayeon07)
 
 
 ## License
